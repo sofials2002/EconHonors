@@ -1,0 +1,335 @@
+---
+title: "R Notebook for Sofia's Honor's Thesis"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+```{r}
+#Installing the necessary packages: 
+
+install.packages("tidyverse")
+library(tidyverse)
+
+install.packages("devtools")
+devtools::install_github("r-lib/conflicted")
+
+library(conflicted)
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+
+#Setting my working directory: 
+setwd("/Users/sofialozano/Desktop/Honors_Thesis_Data")
+
+#Defining each dataset name, from my desktop files. The name : 
+
+UNHCR_LBN_2016_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/DATA TO APPEND (HH, 2016-2022) /UNHCR_LBN_2016_VASYR.csv")
+UNHCR_LBN_2017_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/DATA TO APPEND (HH, 2016-2022) /UNHCR_LBN_2017_VASYR.csv")
+UNHCR_LBN_2018_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/DATA TO APPEND (HH, 2016-2022) /UNHCR_LBN_2018_VASYR.csv")
+UNHCR_LBN_2019_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/DATA TO APPEND (HH, 2016-2022) /UNHCR_LBN_2019_VASYR.csv")
+UNHCR_LBN_2020_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/DATA TO APPEND (HH, 2016-2022) /UNHCR_LBN_2020_VASYR.csv")
+UNHCR_LBN_2021_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/DATA TO APPEND (HH, 2016-2022) /UNHCR_LBN_2021_VASYR.csv")
+UNHCR_LBN_2022_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/DATA TO APPEND (HH, 2016-2022) /UNHCR_LBN_2022_VASYR.csv")
+
+
+```
+
+```{r}
+#Loading package for data manipulation, namely to rename data: 
+library(dplyr)
+
+#Try at summary statistics: find mean, excluding NAs: 
+mean(UNHCR_LBN_2016_VASYR$hh_size, na.rm = TRUE)
+glimpse(UNHCR_LBN_2016_VASYR)
+
+#Histogram for household size:
+hist(UNHCR_LBN_2016_VASYR$hh_size)
+hist(UNHCR_LBN_2022_VASYR$total_income) #helps see that many are low income households 
+
+```
+# With the selected variables that were common amongst the datasets, that I previously organized in an excel spreadsheet, I'll create a concise dataset for each year: 
+
+```{r}
+#Starting with 2016: 
+
+UNHCR_LBN_2016_VASYR.concise <- UNHCR_LBN_2016_VASYR %>%
+  select(cereal_cons, bread_cons,nuts_cons,veg_cons,
+        green_leafy_cons,orange_veg_cons, fruits_cons, orange_fruits_cons, meat_cons, fish_cons, milk_cons, sugar_cons, oil_cons, spices_cons, debt_total, food_oncredit, spent_saving, selling_goods, reduce_essential,	reduce_edu,	no_school,	selling_assets,	child_mariage, child_labour, exploitative_work, sold_house,	begging, less_expensive, reduced_portion, reduced_meals, borrowed_food, restrict_consumption_adult, days_nofood, eat_elsewhere, restrict_consumption_female, location, household_id,	hh_size, debt_total, first_income_sources, total_income)
+        
+print(UNHCR_LBN_2016_VASYR.concise)
+
+#Now 2017: (issues I ran into: mis-spelt words like "ceareal" and "mariage")
+
+UNHCR_LBN_2017_VASYR.concise <- UNHCR_LBN_2017_VASYR %>%
+select(
+    ceareal_tubers_grp, nuts_cons, veg_leaves_grp,
+    orange_fruits_grp, meat_fish_grp, milk_cons,
+    sugar_cons, oil_cons, spices_cons, debt_total,
+    food_oncredit, spent_saving, selling_goods,
+    reduce_essential, reduce_edu, no_school,
+    selling_assets, child_mariage, child_labour,
+    exploitative_work, sold_house, begging,
+    less_expensive, reduced_portion, reduced_meals,
+    borrowed_food, restrict_consumption_adults,
+    days_nofood, eat_elsewhere, restrict_consumption_female,
+    assigned_district, household_id, hh_size,
+    first_income_sources, total_income
+  )
+        
+print(UNHCR_LBN_2017_VASYR.concise)
+
+#Now 2018 (challenges: "leaves" and marriage wrong spelling): 
+
+UNHCR_LBN_2018_VASYR.concise <- UNHCR_LBN_2018_VASYR %>%
+ select(
+    ceareal_tubers_grp, roots_cons, veg_leaaves_grp,
+    orange_fruits_grp, meat_fish_grp, milk_cons,
+    sugar_cons, oil_cons, spices_cons, debt_total,
+    food_oncredit, spent_saving, selling_goods,
+    reduce_essential, reduce_edu, no_school,
+    selling_assets, child_mariage, child_labour,
+    exploitative_work, sold_house, begging,
+    less_expensive, reduced_portion, reduced_meals,
+    borrowed_food, restrict_consumption, days_nofood,
+    eat_elsewhere, rest_consumption, district,
+    formid, total_hh, first_income_sources,
+    total_income
+  )
+  
+  print(UNHCR_LBN_2018_VASYR.concise)
+  
+
+#Now 2019 (challenges: "mariage", "debt" and "income"): 
+
+UNHCR_LBN_2019_VASYR.concise <- UNHCR_LBN_2019_VASYR %>%
+  select(
+    num_days_cereals_i, num_days_tubers_cons_i, num_days_legumes_i,
+    num_days_veg_i, num_days_orange_veg_i, num_days_green_leafy_i,
+    num_days_other_veg_i, num_days_orange_fruits_i, num_days_fruits_i,
+    num_days_meat_fish_i, num_days_milk_i, num_days_sugar_i, num_days_oil_i,
+    num_days_condiments_i, cur_debt_not_paid_dec, bought_food_credit_yn,
+    spent_hh_savings_yn, sold_hh_goods_yn, red_non_food_exp_health_yn,
+    red_non_food_exp_edu_yn, withd_chld_school_yn, sold_assets_yn,
+    child_mariage_yn, child_labour_yn, exploit_work_yn, sold_house_yn,
+    begging_yn, less_expensive_i, reduced_portion_i, reduced_meals_i,
+    borrowed_food_i, restrict_consumption_i, days_nofood_i, eat_elsewhere_i,
+    restrict_cons_f_i, district_s, n, total_num_hh_i, Debt_total_sum_up,
+    main_income_src_s, total_income_dec
+  )
+
+ print(UNHCR_LBN_2019_VASYR.concise)
+ 
+#Now 2020 (challenges: ): 
+
+
+UNHCR_LBN_2020_VASYR.concise <- UNHCR_LBN_2020_VASYR %>%
+select(
+    tot_cereal, num_days_legumes_i, num_days_veg_i,
+    num_days_orange_veg_i, num_days_green_leafy_i, num_days_other_veg_i,
+    num_days_orange_fruits_i, num_days_fruits_i, num_days_other_fruits_i,
+    total_fruits_group, num_days_meat_fish_i, num_days_milk_i,
+    num_days_sugar_i, num_days_oil_i, num_days_condiments_i,
+    cur_debt_not_paid_dec, bought_food_credit_yn, spent_hh_savings_yn,
+    sold_hh_goods_yn, red_non_food_exp_health_yn, red_non_food_exp_edu_yn,
+    withd_chld_school_yn, sold_assets_yn, child_mariage_yn, child_labour_yn,
+    exploit_work_yn, sold_house_yn, begging_yn, less_expensive_i,
+    reduced_portion_i, reduced_meals_i, borrowed_food_i,
+    restrict_consumption_i, days_nofood_i, eat_elsewhere_i,
+    restrict_cons_f_i, district_s, household_id, total_num_hh_i,
+    main_income_src_s, total_income_dec
+  )
+  
+   print(UNHCR_LBN_2020_VASYR.concise)
+   
+   
+#Now 2021 (challenges: ):
+
+UNHCR_LBN_2021_VASYR.concise <- UNHCR_LBN_2021_VASYR %>%
+ select(
+    tot_cereal,
+    num_days_legumes_i,
+    num_days_veg_i,
+    num_days_orange_veg_i,
+    num_days_green_leafy_i,
+    num_days_other_veg_i,
+    total_sub_veg_group,
+    num_days_orange_fruits_i,
+    num_days_fruits_i,
+    num_days_other_fruits_i,
+    total_fruits_group,
+    num_days_meat_fish_i,
+    num_days_milk_i,
+    num_days_sugar_i,
+    num_days_oil_i,
+    num_days_condiments_i,
+    bought_food_credit_yn,
+    spent_hh_savings_yn,
+    sold_hh_goods_yn,
+    red_non_food_exp_health_yn,
+    red_non_food_exp_edu_yn,
+    withd_chld_school_yn,
+    sold_assets_yn,
+    child_mariage_yn,
+    child_labour_yn,
+    exploit_work_yn,
+    sold_house_yn,
+    begging_yn,
+    less_expensive_i,
+    reduced_portion_i,
+    reduced_meals_i,
+    borrowed_food_i,
+    restrict_consumption_i,
+    days_nofood_i,
+    eat_elsewhere_i,
+    restrict_cons_f_i,
+    district,
+    household_id,
+    total_num_hh_i,
+    cur_debt_not_paid_dec,
+    main_income_src_s,
+    total_income_dec
+  )
+  
+   print(UNHCR_LBN_2021_VASYR.concise)
+
+#Now 2022 (challenges: ):
+
+UNHCR_LBN_2022_VASYR.concise <- UNHCR_LBN_2022_VASYR %>%
+ select(
+    num_days_cereal_cons_i,
+    num_days_tubers_cons_i,
+    tot_cereal,
+    num_days_legumes_i,
+    num_days_veg_i,
+    num_days_orange_veg_i,
+    num_days_green_leafy_i,
+    num_days_other_veg_i,
+    total_sub_veg_group,
+    num_days_orange_fruits_i,
+    num_days_fruits_i,
+    num_days_other_fruits_i,
+    total_fruits_group,
+    num_days_meat_fish_i,
+    total_meat_fish_group,
+    num_days_milk_i,
+    num_days_sugar_i,
+    num_days_oil_i,
+    num_days_condiments_i,
+    cur_debt_not_paid_dec,
+    bought_food_credit_yn,
+    spent_hh_savings_yn,
+    sold_hh_goods_yn,
+    red_non_food_exp_health_yn,
+    red_non_food_exp_edu_yn,
+    withd_chld_school_yn,
+    sold_assets_yn,
+    child_mariage_yn,
+    child_labour_yn,
+    exploit_work_yn,
+    sold_house_yn,
+    begging_yn,
+    less_expensive_i,
+    reduced_portion_i,
+    reduced_meals_i,
+    borrowed_food_i,
+    restrict_consumption_i,
+    district_s,
+    id,
+    total_num_hh_i,
+    main_income_src_s,
+    total_income_dec,
+    total_reported_debt
+  )
+   print(UNHCR_LBN_2022_VASYR.concise)
+```
+
+#Before applying a specific common name/matching name code, I'll make operations so that the extra variables are averaged (i.e, cereals and pulses averages both, in the years in which this isn't the case.)
+
+#to make a pipe (shortcut for manipulating the dataset) press command shift m: 
+
+UNHCR_LBN_2016_VASYR.concise$cereal_tot <- (UNHCR_LBN_2016_VASYR.concise$cereal_cons + UNHCR_LBN_2016_VASYR.concise$bread_cons) / 2
+
+# Now, if you want to remove the original two variables
+UNHCR_LBN_2016_VASYR.concise <- UNHCR_LBN_2016_VASYR.concise[, !(names(UNHCR_LBN_2016_VASYR.concise) %in% c("bread_cons", "cereal_cons"))]
+ 
+ 
+#for other variables: Veg: 
+UNHCR_LBN_2016_VASYR.concise <- UNHCR_LBN_2016_VASYR.concise %>%
+  mutate(veg_leaves_grp = (veg_cons + green_leafy_cons + orange_veg_cons) / 3) %>%
+  select(-c(veg_cons, green_leafy_cons, orange_veg_cons))
+  
+UNHCR_LBN_2016_VASYR.concise$veg_leaves_grp <- round(UNHCR_LBN_2016_VASYR.concise$veg_leaves_grp, 1)
+
+#fruits: 
+UNHCR_LBN_2016_VASYR.concise <- UNHCR_LBN_2016_VASYR.concise %>%
+  mutate(orange_fruits_grp = (fruits_cons + orange_fruits_cons) / 2) %>%
+  select(-c(fruits_cons, orange_fruits_cons))
+
+UNHCR_LBN_2016_VASYR.concise$orange_fruits_grp <- round(UNHCR_LBN_2016_VASYR.concise$orange_fruits_grp, 1)
+
+#meat and fish: 
+UNHCR_LBN_2016_VASYR.concise <- UNHCR_LBN_2016_VASYR.concise %>%
+  mutate(meat_fish_grp = (meat_cons + fish_cons) / 2) %>%
+  select(-c(meat_cons, fish_cons))
+
+# Round the newly created variable
+UNHCR_LBN_2016_VASYR.concise$meat_fish_grp <- round(UNHCR_LBN_2016_VASYR.concise$meat_fish_grp, 1)
+
+#2017 and 2018 need no variable cleaning operations yet. For 2019: 
+
+UNHCR_LBN_2019_VASYR.concise <- UNHCR_LBN_2019_VASYR.concise %>%
+  mutate(
+    tot_cereal = (num_days_cereals_i + num_days_tubers_cons_i) / 2,
+    legumes = num_days_legumes_i,
+    veg_leaves_grp = (num_days_veg_i + num_days_orange_veg_i + num_days_green_leafy_i + num_days_other_veg_i) / 4,
+    orange_fruits_grp = (num_days_orange_fruits_i + num_days_fruits_i) / 2
+  ) %>%
+  select(-c(num_days_cereals_i, num_days_tubers_cons_i, num_days_legumes_i, num_days_veg_i, num_days_orange_veg_i, num_days_green_leafy_i, num_days_other_veg_i, num_days_orange_fruits_i, num_days_fruits_i))
+
+# Round the newly created variables if needed
+UNHCR_LBN_2019_VASYR.concise$tot_cereal <- round(UNHCR_LBN_2019_VASYR.concise$tot_cereal, 1)
+UNHCR_LBN_2019_VASYR.concise$veg_leaves_grp <- round(UNHCR_LBN_2019_VASYR.concise$veg_leaves_grp, 1)
+UNHCR_LBN_2019_VASYR.concise$orange_fruits_grp <- round(UNHCR_LBN_2019_VASYR.concise$orange_fruits_grp, 1)
+
+#For 2020: 
+UNHCR_LBN_2020_VASYR.concise <- UNHCR_LBN_2020_VASYR.concise %>%
+  select(-c(num_days_orange_veg_i, num_days_green_leafy_i, num_days_other_veg_i, num_days_orange_fruits_i, num_days_other_fruits_i, total_fruits_group))
+  
+#For 2021: 
+UNHCR_LBN_2021_VASYR.concise <- UNHCR_LBN_2021_VASYR.concise %>%
+  select(-c(total_sub_veg_group, num_days_orange_veg_i, num_days_green_leafy_i, num_days_other_veg_i, num_days_orange_fruits_i, num_days_other_fruits_i, total_fruits_group))
+  
+#For 2022: 
+UNHCR_LBN_2022_VASYR.concise <- UNHCR_LBN_2022_VASYR.concise %>%
+  select(-c(total_sub_veg_group, num_days_orange_veg_i, num_days_green_leafy_i, num_days_other_veg_i, num_days_orange_fruits_i, num_days_other_fruits_i, total_fruits_group, num_days_cereal_cons_i, num_days_tubers_cons_i, total_meat_fish_group))
+  
+  
+#Changing the names, in the format "new name" = "old name":
+UNHCR_LBN_2016_VASYR.concise_renamed <- rename(UNHCR_LBN_2016_VASYR, "district" = "location", "main_staples" = "cereal_cons", "main_staples1" = "bread_cons", "pulses_nuts"=
+                                                               )
+#Check the new names after having renamed the variables: 
+names(UNHCR_LBN_2019_VASYR.renamed)
+
+#Add a column for the year name, so that's its easily identifiable when merged with the other year's datasets:
+year_2016 <-
+ 
+#Save the file with the renamed variables: 
+savecsv(UNHCR_LBN_2019_VASYR.renamed, file="UNHCR_LBN_2019_VASYR.renamed")
+
+#data viz with ggplot 
+ggplot(UNHCR_LBN_2016_VASYR, aes(x= city,
+                                  y= hwy) +
+                                  geom_point()
