@@ -6,11 +6,7 @@ output: html_notebook
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
 
-```{r}
-plot(cars)
-```
 
-```{r}
 #Installing the necessary packages: 
 
 install.packages("tidyverse")
@@ -21,7 +17,6 @@ devtools::install_github("r-lib/conflicted")
 
 library(conflicted)
 
-```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
@@ -29,7 +24,6 @@ When you save the notebook, an HTML file containing the code and output will be 
 
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
-```{r}
 
 #Setting my working directory: 
 setwd("/Users/sofialozano/Desktop/Honors_Thesis_Data")
@@ -45,9 +39,7 @@ UNHCR_LBN_2021_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/
 UNHCR_LBN_2022_VASYR <- read.csv("/Users/sofialozano/Desktop/Honors_Thesis_Data/DATA TO APPEND (HH, 2016-2022) /UNHCR_LBN_2022_VASYR.csv")
 
 
-```
 
-```{r}
 #Loading package for data manipulation, namely to rename data: 
 library(dplyr)
 
@@ -59,10 +51,10 @@ glimpse(UNHCR_LBN_2016_VASYR)
 hist(UNHCR_LBN_2016_VASYR$hh_size)
 hist(UNHCR_LBN_2022_VASYR$total_income) #helps see that many are low income households 
 
-```
+
 # With the selected variables that were common amongst the datasets, that I previously organized in an excel spreadsheet, I'll create a concise dataset for each year: 
 
-```{r}
+
 #Starting with 2016: 
 
 UNHCR_LBN_2016_VASYR.concise <- UNHCR_LBN_2016_VASYR %>%
@@ -254,9 +246,10 @@ UNHCR_LBN_2022_VASYR.concise <- UNHCR_LBN_2022_VASYR %>%
     total_reported_debt
   )
    print(UNHCR_LBN_2022_VASYR.concise)
-```
+   
 
 #Before applying a specific common name/matching name code, I'll make operations so that the extra variables are averaged (i.e, cereals and pulses averages both, in the years in which this isn't the case.)
+
 
 #to make a pipe (shortcut for manipulating the dataset) press command shift m: 
 
@@ -315,17 +308,322 @@ UNHCR_LBN_2021_VASYR.concise <- UNHCR_LBN_2021_VASYR.concise %>%
 #For 2022: 
 UNHCR_LBN_2022_VASYR.concise <- UNHCR_LBN_2022_VASYR.concise %>%
   select(-c(total_sub_veg_group, num_days_orange_veg_i, num_days_green_leafy_i, num_days_other_veg_i, num_days_orange_fruits_i, num_days_other_fruits_i, total_fruits_group, num_days_cereal_cons_i, num_days_tubers_cons_i, total_meat_fish_group))
-  
-  
-#Changing the names, in the format "new name" = "old name":
-UNHCR_LBN_2016_VASYR.concise_renamed <- rename(UNHCR_LBN_2016_VASYR, "district" = "location", "main_staples" = "cereal_cons", "main_staples1" = "bread_cons", "pulses_nuts"=
-                                                               )
-#Check the new names after having renamed the variables: 
-names(UNHCR_LBN_2019_VASYR.renamed)
 
-#Add a column for the year name, so that's its easily identifiable when merged with the other year's datasets:
-year_2016 <-
- 
+
+  
+#Now, ill add a variable for the year, so that I can merge the datasets: 
+
+# For 2016
+UNHCR_LBN_2016_VASYR.concise$Year <- "2016"
+
+# For 2017
+UNHCR_LBN_2017_VASYR.concise$Year <- "2017"
+
+# For 2018
+UNHCR_LBN_2018_VASYR.concise$Year <- "2018"
+
+# For 2019
+UNHCR_LBN_2019_VASYR.concise$Year <- "2019"
+
+# For 2020
+UNHCR_LBN_2020_VASYR.concise$Year <- "2020"
+
+# For 2021
+UNHCR_LBN_2021_VASYR.concise$Year <- "2021"
+
+# For 2022
+UNHCR_LBN_2022_VASYR.concise$Year <- "2022"
+
+
+# List of datasets
+datasets <- list(
+  UNHCR_LBN_2016_VASYR.concise,
+  UNHCR_LBN_2017_VASYR.concise,
+  UNHCR_LBN_2018_VASYR.concise,
+  UNHCR_LBN_2019_VASYR.concise,
+  UNHCR_LBN_2020_VASYR.concise,
+  UNHCR_LBN_2021_VASYR.concise,
+  UNHCR_LBN_2022_VASYR.concise
+)
+
+# Print variable names for each dataset
+for (i in seq_along(datasets)) {
+  print(paste("Dataset", i, "Variable Names:"))
+  print(names(datasets[[i]]))
+  cat("\n")
+}
+
+
+#Check which variables are common to all datasets. First, start with 2016 as the base, and then check the other years:
+
+#checking 2017: 
+common_vars <- intersect(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2017_VASYR.concise))
+non_common_vars_2016 <- setdiff(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2017_VASYR.concise))
+non_common_vars_2017 <- setdiff(names(UNHCR_LBN_2017_VASYR.concise), names(UNHCR_LBN_2016_VASYR.concise))
+
+# Print results
+cat("Common Variables:", common_vars, "\n\n")
+cat("Variables in 2016 but not in 2017:", non_common_vars_2016, "\n\n")
+cat("Variables in 2017 but not in 2016:", non_common_vars_2017, "\n\n")
+
+
+#Now changing the names in 2017 that aren't the same: 
+#Changing the names, in the format "new name" = "old name":
+UNHCR_LBN_2017_VASYR.concise <- rename(UNHCR_LBN_2017_VASYR.concise,
+                                       "cereal_tot" = "ceareal_tubers_grp",
+                                       "restrict_consumption_adult" = "restrict_consumption_adults",
+                                       "location"='assigned_district'
+                                       )
+                                       
+
+#Checking 2018: 
+common_vars <- intersect(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2018_VASYR.concise))
+non_common_vars_2016 <- setdiff(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2018_VASYR.concise))
+non_common_vars_2018 <- setdiff(names(UNHCR_LBN_2018_VASYR.concise), names(UNHCR_LBN_2016_VASYR.concise))
+
+# Print results
+cat("Common Variables:", common_vars, "\n\n")
+cat("Variables in 2016 but not in 2018:", non_common_vars_2016, "\n\n")
+cat("Variables in 2018 but not in 2016:", non_common_vars_2018, "\n\n")
+
+#Changing the names, in the format "new name" = "old name":
+UNHCR_LBN_2018_VASYR.concise <- rename(UNHCR_LBN_2018_VASYR.concise,
+                                       "cereal_tot" = "ceareal_tubers_grp",
+                                       "restrict_consumption_adult" = "restrict_consumption",
+                                       "restrict_consumption_female"= "rest_consumption",
+                                       "location"= "district",
+                                       "household_id" = "formid",
+                                       "hh_size" = "total_hh",
+                                       "veg_leaves_grp" = "veg_leaaves_grp",
+                                       "nuts_cons" = "roots_cons"
+                                       )
+                                       
+                                       
+#Checking 2019:
+common_vars <- intersect(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2019_VASYR.concise))
+non_common_vars_2016 <- setdiff(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2019_VASYR.concise))
+non_common_vars_2019 <- setdiff(names(UNHCR_LBN_2019_VASYR.concise), names(UNHCR_LBN_2016_VASYR.concise))
+
+# Print results
+cat("Common Variables:", common_vars, "\n\n")
+cat("Variables in 2016 but not in 2019:", non_common_vars_2016, "\n\n")
+cat("Variables in 2019 but not in 2016:", non_common_vars_2019, "\n\n")
+
+#Changing the names, in the format "new name" = "old name":
+UNHCR_LBN_2019_VASYR.concise <- rename(UNHCR_LBN_2019_VASYR.concise,
+                                       "nuts_cons" = "legumes",
+                                       "milk_cons" = "num_days_milk_i",
+                                       "sugar_cons" = "num_days_sugar_i",
+                                       "oil_cons" = "num_days_oil_i",
+                                       "spices_cons" = "num_days_condiments_i",
+                                       "debt_total" = "cur_debt_not_paid_dec",
+                                       "food_oncredit" = "bought_food_credit_yn",
+                                       "spent_saving" = "spent_hh_savings_yn",
+                                       "selling_goods" = "sold_hh_goods_yn",
+                                       "reduce_essential" = "red_non_food_exp_health_yn",
+                                       "reduce_edu" = "red_non_food_exp_edu_yn",
+                                       "no_school" = "withd_chld_school_yn",
+                                       "selling_assets" = "sold_assets_yn",
+                                       "child_mariage" = "child_mariage_yn",
+                                       "child_labour" = "child_labour_yn",
+                                       "exploitative_work" = "exploit_work_yn",
+                                       "sold_house" = "sold_house_yn",
+                                       "begging" = "begging_yn",
+                                       "less_expensive" = "less_expensive_i",
+                                       "reduced_portion" = "reduced_portion_i",
+                                       "reduced_meals" = "reduced_meals_i",
+                                       "borrowed_food" = "borrowed_food_i",
+                                       "restrict_consumption_adult" = "restrict_consumption_i",
+                                       "days_nofood" = "days_nofood_i",
+                                       "eat_elsewhere" = "eat_elsewhere_i",
+                                       "restrict_consumption_female" = "restrict_cons_f_i",
+                                       "location"="district_s",
+                                       "household_id" = "n",
+                                       "hh_size"="total_num_hh_i",
+                                       "first_income_sources" = "main_income_src_s",
+                                       "total_income" = "total_income_dec",
+                                       "cereal_tot" = "tot_cereal",
+                                       "meat_fish_grp" = "num_days_meat_fish_i"
+                                       )
+
+
+#Checking 2020:
+common_vars <- intersect(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2020_VASYR.concise))
+non_common_vars_2016 <- setdiff(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2020_VASYR.concise))
+non_common_vars_2020 <- setdiff(names(UNHCR_LBN_2020_VASYR.concise), names(UNHCR_LBN_2016_VASYR.concise))
+
+# Print results
+cat("Common Variables:", common_vars, "\n\n")
+cat("Variables in 2016 but not in 2020:", non_common_vars_2016, "\n\n")
+cat("Variables in 2020 but not in 2016:", non_common_vars_2020, "\n\n")
+
+#Changing the names, in the format "new name" = "old name":
+UNHCR_LBN_2020_VASYR.concise <- rename(UNHCR_LBN_2020_VASYR.concise,
+                                        "nuts_cons" = "num_days_legumes_i",
+                                        "milk_cons" = "num_days_milk_i",
+                                        "sugar_cons" = "num_days_sugar_i",
+                                        "oil_cons" = "num_days_oil_i",
+                                        "spices_cons" = "num_days_condiments_i",
+                                        "debt_total" = "cur_debt_not_paid_dec",
+                                        "food_oncredit" = "bought_food_credit_yn",
+                                        "spent_saving" = "spent_hh_savings_yn",
+                                        "selling_goods" = "sold_hh_goods_yn",
+                                        "reduce_essential" = "red_non_food_exp_health_yn",
+                                        "reduce_edu" = "red_non_food_exp_edu_yn",
+                                        "no_school" = "withd_chld_school_yn",
+                                        "selling_assets" = "sold_assets_yn",
+                                        "child_mariage" = "child_mariage_yn",
+                                        "child_labour" = "child_labour_yn",
+                                        "exploitative_work" = "exploit_work_yn",
+                                        "sold_house" = "sold_house_yn",
+                                        "begging" = "begging_yn",
+                                        "less_expensive" = "less_expensive_i",
+                                        "reduced_portion" = "reduced_portion_i",
+                                        "reduced_meals" = "reduced_meals_i",
+                                        "borrowed_food" = "borrowed_food_i",
+                                        "restrict_consumption_adult" = "restrict_consumption_i",
+                                        "days_nofood" = "days_nofood_i",
+                                        "eat_elsewhere" = "eat_elsewhere_i",
+                                        "restrict_consumption_female" = "restrict_cons_f_i",
+                                        "location" = "district_s",
+                                        "hh_size" = "total_num_hh_i",
+                                        "first_income_sources" = "main_income_src_s",
+                                        "total_income" = "total_income_dec",
+                                        "cereal_tot" = "tot_cereal",
+                                        "veg_leaves_grp" = "num_days_veg_i",
+                                        "orange_fruits_grp" = "num_days_fruits_i",
+                                        "meat_fish_grp" = "num_days_meat_fish_i"
+                                        )
+                                        
+                                        
+#Checking 2021:
+common_vars <- intersect(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2021_VASYR.concise))
+non_common_vars_2016 <- setdiff(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2021_VASYR.concise))
+non_common_vars_2021 <- setdiff(names(UNHCR_LBN_2021_VASYR.concise), names(UNHCR_LBN_2016_VASYR.concise))
+
+# Print results
+cat("Common Variables:", common_vars, "\n\n")
+cat("Variables in 2016 but not in 2021:", non_common_vars_2016, "\n\n")
+cat("Variables in 2021 but not in 2016:", non_common_vars_2021, "\n\n")
+
+#Changing the names, in the format "new name" = "old name":
+UNHCR_LBN_2021_VASYR.concise <- rename(
+  UNHCR_LBN_2021_VASYR.concise,
+  "nuts_cons"="num_days_legumes_i",
+  "milk_cons"="num_days_milk_i",
+  "sugar_cons"="num_days_sugar_i",
+  "oil_cons"="num_days_oil_i",
+  "spices_cons"="num_days_condiments_i",
+  "debt_total"="cur_debt_not_paid_dec",
+  "food_oncredit"="bought_food_credit_yn",
+  "spent_saving"="spent_hh_savings_yn",
+  "selling_goods"="sold_hh_goods_yn",
+  "reduce_essential"="red_non_food_exp_health_yn",
+  "reduce_edu"="red_non_food_exp_edu_yn",
+  "no_school"="withd_chld_school_yn",
+  "selling_assets"="sold_assets_yn",
+  "child_mariage"="child_mariage_yn",
+  "child_labour"="child_labour_yn",
+  "exploitative_work"="exploit_work_yn",
+  "sold_house"="sold_house_yn",
+  "begging"="begging_yn",
+  "less_expensive"="less_expensive_i",
+  "reduced_portion"="reduced_portion_i",
+  "reduced_meals"="reduced_meals_i",
+  "borrowed_food"="borrowed_food_i",
+  "restrict_consumption_adult"="restrict_consumption_i",
+  "days_nofood"="days_nofood_i",
+  "eat_elsewhere"="eat_elsewhere_i",
+  "restrict_consumption_female"="restrict_cons_f_i",
+  "location"="district",
+  "hh_size"="total_num_hh_i",
+  "first_income_sources"="main_income_src_s",
+  "total_income"="total_income_dec",
+  "cereal_tot"="tot_cereal",
+  "veg_leaves_grp"="num_days_veg_i",
+  "orange_fruits_grp"="num_days_fruits_i",
+  "meat_fish_grp="="num_days_meat_fish_i"
+)
+
+#Checking 2022:
+common_vars <- intersect(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2022_VASYR.concise))
+non_common_vars_2016 <- setdiff(names(UNHCR_LBN_2016_VASYR.concise), names(UNHCR_LBN_2022_VASYR.concise))
+non_common_vars_2022 <- setdiff(names(UNHCR_LBN_2022_VASYR.concise), names(UNHCR_LBN_2016_VASYR.concise))
+
+# Print results
+cat("Common Variables:", common_vars, "\n\n")
+cat("Variables in 2016 but not in 2022:", non_common_vars_2016, "\n\n")
+cat("Variables in 2022 but not in 2016:", non_common_vars_2022, "\n\n")
+
+#Changing the names, in the format "new name" = "old name":
+UNHCR_LBN_2022_VASYR.concise <- rename(
+  UNHCR_LBN_2022_VASYR.concise,
+  "nuts_cons"="num_days_legumes_i",
+  "milk_cons"="num_days_milk_i",
+  "sugar_cons"="num_days_sugar_i",
+  "oil_cons"="num_days_oil_i",
+  "spices_cons"="num_days_condiments_i",
+  "debt_total"="cur_debt_not_paid_dec",
+  "food_oncredit"="bought_food_credit_yn",
+  "spent_saving"="spent_hh_savings_yn",
+  "selling_goods"="sold_hh_goods_yn",
+  "reduce_essential"="red_non_food_exp_health_yn",
+  "reduce_edu"="red_non_food_exp_edu_yn",
+  "no_school"="withd_chld_school_yn",
+  "selling_assets"="sold_assets_yn",
+  "child_mariage"="child_mariage_yn",
+  "child_labour"="child_labour_yn",
+  "exploitative_work"="exploit_work_yn",
+  "sold_house"="sold_house_yn",
+  "begging"="begging_yn",
+  "less_expensive"="less_expensive_i",
+  "reduced_portion"="reduced_portion_i",
+  "reduced_meals"="reduced_meals_i",
+  "borrowed_food"="borrowed_food_i",
+  "restrict_consumption_adult"="restrict_consumption_i",
+  "location"="district_s",
+  "household_id"="id",
+  "hh_size"="total_num_hh_i",
+  "first_income_sources"="main_income_src_s",
+  "total_income"="total_income_dec",
+  "cereal_tot"="tot_cereal",
+  "veg_leaves_grp"="num_days_veg_i",
+  "orange_fruits_grp"="num_days_fruits_i",
+  "meat_fish_grp"="num_days_meat_fish_i"
+)
+
+
+#Now, I'll append the datasets:
+
+#There's an error, because household_id in the year 2018 is a character and not an integer> I'll change it to integer:
+variable_data_type <- class(UNHCR_LBN_2018_VASYR.concise$household_id)
+
+#change to integer:
+UNHCR_LBN_2018_VASYR.concise$household_id <- as.integer(UNHCR_LBN_2018_VASYR.concise$household_id)
+
+#Now tackle error with hh size
+UNHCR_LBN_2019_VASYR.concise$hh_size <- UNHCR_LBN_2019_VASYR$total_num_hh_i
+
+UNHCR_LBN_2019_VASYR.concise <- UNHCR_LBN_2019_VASYR.concise %>%
+mutate(hh_size = ifelse(household_size == "10 or more", "10", hh_size)) %>%
+  
+### ERROR!! HERE IT STOPS WORKING :(( CANNOT FIND THE 2019 ANYMORE :((
+
+  mutate(hh_size = as.integer(hh_size))
+
+# Now, convert the modified column to integer
+your_data_frame$household_size <- as.integer(your_data_frame$household_size)
+
+# Create a vector of years from 2016 to 2022
+years <- 2016:2022
+
+# Use lapply to get a list of datasets based on the pattern
+datasets <- lapply(years, function(year) get(paste0("UNHCR_LBN_", year, "_VASYR.concise")))
+
+# Append datasets
+appended_df <- bind_rows(datasets)
+
+
 #Save the file with the renamed variables: 
 savecsv(UNHCR_LBN_2019_VASYR.renamed, file="UNHCR_LBN_2019_VASYR.renamed")
 
