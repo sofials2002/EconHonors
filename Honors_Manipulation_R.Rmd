@@ -3,8 +3,8 @@ title: "R Notebook for Sofia's Honor's Thesis"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+#This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+#Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
 
 
 #Installing the necessary packages: 
@@ -18,11 +18,11 @@ devtools::install_github("r-lib/conflicted")
 library(conflicted)
 
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+#Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+#When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+#The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
 
 #Setting my working directory: 
@@ -598,21 +598,32 @@ UNHCR_LBN_2022_VASYR.concise <- rename(
 #There's an error, because household_id in the year 2018 is a character and not an integer> I'll change it to integer:
 variable_data_type <- class(UNHCR_LBN_2018_VASYR.concise$household_id)
 
-#change to integer:
-UNHCR_LBN_2018_VASYR.concise$household_id <- as.integer(UNHCR_LBN_2018_VASYR.concise$household_id)
+library(dplyr)
 
-#Now tackle error with hh size
-UNHCR_LBN_2019_VASYR.concise$hh_size <- UNHCR_LBN_2019_VASYR$total_num_hh_i
+# Assuming dataset is loaded as UNHCR_LBN_2017_VASYR.concise
 
-UNHCR_LBN_2019_VASYR.concise <- UNHCR_LBN_2019_VASYR.concise %>%
-mutate(hh_size = ifelse(household_size == "10 or more", "10", hh_size)) %>%
+UNHCR_LBN_2016_VASYR.concise <- UNHCR_LBN_2016_VASYR.concise %>%
+  mutate(household_id = as.character(household_id))
   
-### ERROR!! HERE IT STOPS WORKING :(( CANNOT FIND THE 2019 ANYMORE :((
+UNHCR_LBN_2017_VASYR.concise <- UNHCR_LBN_2017_VASYR.concise %>%
+  mutate(household_id = as.character(household_id))
 
-  mutate(hh_size = as.integer(hh_size))
+UNHCR_LBN_2019_VASYR.concise <- UNHCR_LBN_2018_VASYR.concise %>%
+  mutate(household_id = as.character(household_id))
 
-# Now, convert the modified column to integer
-your_data_frame$household_size <- as.integer(your_data_frame$household_size)
+UNHCR_LBN_2020_VASYR.concise <- UNHCR_LBN_2020_VASYR.concise %>%
+  mutate(household_id = as.character(household_id))
+  
+UNHCR_LBN_2021_VASYR.concise <- UNHCR_LBN_2021_VASYR.concise %>%
+  mutate(household_id = as.character(household_id))
+  
+UNHCR_LBN_2022_VASYR.concise <- UNHCR_LBN_2022_VASYR.concise %>%
+  mutate(household_id = as.character(household_id))
+
+# Now, all datasets have the specified variable as character type:
+
+class(UNHCR_LBN_2022_VASYR.concise$household_id)
+
 
 # Create a vector of years from 2016 to 2022
 years <- 2016:2022
@@ -623,7 +634,67 @@ datasets <- lapply(years, function(year) get(paste0("UNHCR_LBN_", year, "_VASYR.
 # Append datasets
 appended_df <- bind_rows(datasets)
 
+#Now I'll make some graphs: 
 
+#Line chart showing trends over time (years)
+ggplot(appended_df, aes(x = Year, y = total_income, color = location)) +
+  geom_line(size=3) +
+  labs(title = "Income Trends Over Time",
+       x = "Year",
+       y = "Income",
+       color = "Location") +
+  theme_minimal()
+
+# Boxplot showing the distribution of income by district
+ggplot(appended_df, aes(x = location, y = total_income)) +
+  geom_boxplot() +
+  labs(title = "Income Distribution by District",
+       x = "District",
+       y = "Income") +
+  theme_minimal()
+  
+  
+# Correlation heatmap for selected variables
+#install packages reshape2 and ggplot2:
+install.packages("reshape2")
+install.packages("ggplot2")
+
+
+library(ggplot2)
+
+# Define the variables of interest
+variables_of_interest <- c("cereal_tot", "nuts_cons", "veg_leaves_grp", "meat_fish_grp", "oil_cons")
+
+# Group by Year and calculate the mean for each variable
+grouped_data <- appended_df %>%
+  group_by(Year) %>%
+  summarize(across(all_of(variables_of_interest), mean, na.rm = TRUE))
+
+# Convert the data to long format
+data_long <- gather(grouped_data, key = "Variable", value = "Mean_Value", -Year)
+
+# Create a stacked bar graph
+ggplot(data_long, aes(x = Year, y = Mean_Value, fill = Variable)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Stacked Bar Graph of Averages by Year",
+       x = "Year",
+       y = "Mean Value") +
+  scale_fill_manual(values = c("cereal_tot" = "blue", "nuts_cons" = "green",
+                               "veg_leaves_grp" = "red", "meat_fish_grp" = "purple",
+                               "oil_cons" = "orange")) +
+  theme_minimal()
+  
+#Now i'll creates summary statistics: 
+summary_stats <- summary(appended_df)
+print(summary_stats)
+
+vegetable_consumption_by_year <- appended_df %>%
+  group_by(Year) %>%
+  summarise(mean_vegetable_consumption = mean(veg_leaves_grp, na.rm = TRUE))
+
+# Print the resulting data frame
+print(vegetable_consumption_by_year)
+  
 #Save the file with the renamed variables: 
 savecsv(UNHCR_LBN_2019_VASYR.renamed, file="UNHCR_LBN_2019_VASYR.renamed")
 
