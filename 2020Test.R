@@ -13,30 +13,48 @@ getwd()
 #Load the data:
 
 #Load the household data:
-household_data <- read_csv("/Users/sofialozano/Desktop/EconHonors/Data/Raw/Honors_Thesis_Data/UNHCR_LBN_2018_VASyR_data/UNHCR_LBN_VASYR_2018_household_v2.1.csv")
+household_data <- read_csv("/Users/sofialozano/Desktop/EconHonors/Data/Raw/Honors_Thesis_Data/UNHCR_LBN_2020_VASYR_data/UNHCR_LBN_2020_VASYR_data_household_v2.1.csv")
 #Load the individual data:
-individual_data <- read_csv("/Users/sofialozano/Desktop/EconHonors/Data/Raw/Honors_Thesis_Data/UNHCR_LBN_2018_VASyR_data/UNHCR_LBN_VASYR_2018_individual_v2.1.csv")
+individual_data <- read_csv("/Users/sofialozano/Desktop/EconHonors/Data/Raw/Honors_Thesis_Data/UNHCR_LBN_2020_VASYR_data/UNHCR_LBN_2020_VASYR_data_individual_v2.1.csv")
 
 #Check the data:
 head(household_data)
 head(individual_data)
 
+#see variables with missing values:
+colSums(is.na(household_data))
+#sort the variables by the number of missing values:
+sort(colSums(is.na(household_data)), decreasing = TRUE)
+
 #1. EDUCATION, IND: highest grade completed by the individual
+individual_data <- individual_data %>% mutate(formid = household_id)
+
 #use grepl to see which variables have the name edu:
 names(individual_data)[grepl("grade", names(individual_data))]
 
 #highest_grade is the variable that contains the highest grade completed by the individual.
 #unique values of highest_grade:
+unique(individual_data$highest_grade_t)
+#mutate into highest_grade:
+individual_data <- individual_data %>% mutate(highest_grade = highest_grade_t)
+
+#remove the first lowercase letters and the periods:
+individual_data$highest_grade <- gsub("^[a-z]. ", "", individual_data$highest_grade)
+
+
 unique(individual_data$highest_grade)
 #divide into categories, kindergarten, primary, secondary, university, and other:
 individual_data$highest_grade_category <- NA
-individual_data$highest_grade_category[individual_data$highest_grade %in% c("Nursery", "Kindergarten1", "Kindergarten 2")] <- "Kindergarten"
+individual_data$highest_grade_category[individual_data$highest_grade %in% c("Nursery","Kindergarten 1","Kindergarten 2")] <- "Kindergarten"
 individual_data$highest_grade_category[individual_data$highest_grade %in% c("Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6")] <- "Primary"
-individual_data$highest_grade_category[individual_data$highest_grade %in% c("Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12", "TVET: Grade 10", "TVET: Grade 11", "TVET: Grade 12")] <- "Secondary"
+individual_data$highest_grade_category[individual_data$highest_grade %in% c("Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12","TVET: Grade 7", "TVET: Grade 8", "TVET: Grade 9", "TVET: Grade 10", "TVET: Grade 11", "TVET: Grade 12")] <- "Secondary"
 individual_data$highest_grade_category[individual_data$highest_grade == "University"] <- "University"
-individual_data$highest_grade_category[individual_data$highest_grade %in% c("Technical course", "Did not attend to school but can read and write")] <- "Technical course"
-individual_data$highest_grade_category[individual_data$highest_grade == "Can�t read and write and illitera"] <- "Illiterate"
-individual_data$highest_grade_category[individual_data$highest_grade %in% c("Don�t Kn", "NA")] <- NA
+individual_data$highest_grade_category[individual_data$highest_grade %in% c("Technical course", "TVET License Technique")] <- "Technical course"
+individual_data$highest_grade_category[individual_data$highest_grade == "Did not attend school"] <- "Illiterate"
+individual_data$highest_grade_category[individual_data$highest_grade %in% c("Dont Know", "NA")] <- NA
+
+#see distribution of highest_grade_category:
+table(individual_data$highest_grade_category)
 
 #make a numerical variable for highest_grade_category:
 individual_data$highest_grade_category_numeric <- NA
@@ -46,6 +64,7 @@ individual_data$highest_grade_category_numeric[individual_data$highest_grade_cat
 individual_data$highest_grade_category_numeric[individual_data$highest_grade_category == "Secondary"] <- 3
 individual_data$highest_grade_category_numeric[individual_data$highest_grade_category == "Technical course"] <- 4
 individual_data$highest_grade_category_numeric[individual_data$highest_grade_category == "University"] <- 5
+
 
 table(individual_data$highest_grade_category_numeric)
 
@@ -62,13 +81,13 @@ table(individual_data$highest_grade_category_numeric)
 #how many nas are in the highest_grade_category_numeric variable?
 sum(!is.na(individual_data$highest_grade_category_numeric))
 
+
 #2. AGE, INDIVIDUAL: age of the individual
 
 #what is the datatype of the variable age?
 class(individual_data$age)
 #what are the possible values of the variable age?
 unique(individual_data$age)
-
 #Create a new numeric variable for age, if these are the current values it takes: "30 to 34"   "35 to 39"   "40 to 44"   "25 to 29"   "50 to 54"   "45 to 49"   "60 or more" "20 to 24"   NA
 #"15 to 19"   "55 to 59"   "10 to 14"   "05 to 09"   "00 to 04":
 individual_data$age_numeric <- NA
@@ -98,17 +117,19 @@ unique(individual_data$age_numeric)
 individual_data <- individual_data %>% mutate(children = ifelse(age < 18, 1, 0))
 
 #How many 1s and 0s are in the children variable?
-table(individual_data$children) #This means 12,463 individuals are children and 8897 are not children.
+table(individual_data$children) #This means 13,121 individuals are children and 8897 are not children.
 
 #Create a new variable for children under 5 years old, which equals 1 if the character variable age is "00 to 04":
 individual_data <- individual_data %>% mutate(children_under_5 = ifelse(age == "00 to 04", 1, 0))
 
 #how many 1s and 0s are in the children_under_5 variable?
-table(individual_data$children_under_5) #This means 4578 individuals are children under 5 years old.
+table(individual_data$children_under_5) #This means 4280 individuals are children under 5 years old.
 
 #create children5_to_14 variable:
 individual_data <- individual_data %>% mutate(children_5to_14 = ifelse(age == "05 to 09" | age == "10 to 14", 1, 0))
-table(individual_data$children_5to_14)
+
+#mutate household_id to formid:
+individual_data <- individual_data %>% mutate(formid = household_id)
 
 #Create a new variable in the individual_data dataframe that counts how many children are in each household:
 individual_data <- individual_data %>%
@@ -120,61 +141,97 @@ individual_data <- individual_data %>%
   group_by(formid) %>%
   mutate(under5_per_household = sum(children_under_5))
 
-table(individual_data$under5_per_household)
-
-summary(individual_data$under5_per_household)
-
 #5 to 14 per hh variable: 
 #individual_data <- individual_data %>%
-  #group_by(formid) %>%
-  #mutate(children_5to_14_per_household = sum(children_5to_14))
+#group_by(formid) %>%
+#mutate(children_5to_14_per_household = sum(children_5to_14))
 
 #HEAD OF HOUSEHOLD, LEGAL STATUS AND CIVIL STATUS: 
 
 #show the distribution of the variable relation to head of household:
-summary(individual_data$hoh_relation)
+summary(individual_data$rel_to_hoh_s)
+
+#mutate into hoh_relation:
+individual_data <- individual_data %>% mutate(hoh_relation = rel_to_hoh_s)
+
 #what are the unique values of the variable hoh_relation?
 unique(individual_data$hoh_relation)
 
 #Create a variable mapping the relation to head of household to a numeric value, called hoh_relation_numeric:
-relation_mapping <- c("Head of Household" = 1,
-                      "Wife/Husband" = 2,
-                      "Brother/Sister" = 3,
-                      "NA" = NA,
-                      "Father-in-law/Mother-in-law" = 5,
-                      "Extended family (uncle/aunt/cousin/niece/nephew etc)" = 6,
-                      "Brother-in-law/Sister-in-law" = 7,
-                      "No family relationship � gues" = 8)
+relation_mapping <- c("a. Head of Household" = 1,
+                      "b. Wife/Husband",  "c. Mother/Father" = 2,
+                      "d. Daughter/Son", "e. Brother/Sister" = 3,
+                     "NA" = NA,
+                      "f. Father-in-law/Mother-in-law" = 5,
+                      "h. Extended family (uncle/aunt/cousin/niece/nephew etc)" = 6,
+                      "g. Brother-in-law/Sister-in-law" = 7,
+                      "h. No family relationship guest", "i. Other"  = 8)
 
 # Create a new column with numeric codes
 individual_data$hoh_relation_numeric <- relation_mapping[individual_data$hoh_relation]
 
 #create variable is_head_of_household using mutate:
-individual_data <- individual_data %>% mutate(is_head_of_household = ifelse(hoh_relation_numeric == "1", 1, 0))
+individual_data <- individual_data %>% mutate(is_head_of_household = ifelse(hoh_relation == "a. Head of Household", 1, 0))
 
 #how many 1s and 0s are in the is_head_of_household variable?
-table(individual_data$is_head_of_household) #This means 4323 individuals are head of household.
+table(individual_data$is_head_of_household) #This means 4448 individuals are head of household.
 
 #create the variable has_spouse, from the civil_status variable:
-individual_data$has_spouse <- ifelse(individual_data$civil_status == "Married (MA)", 1, 0)
+individual_data$has_spouse <- ifelse(individual_data$marital_status_s == "Married (MA)", 1, 0)
 
 #Create a numeric variable called legal_residency_numeric from the legal_residency variable:
-individual_data$legal_residency_numeric <- ifelse(individual_data$legal_residency == "Yes", 1, 0)
+individual_data$legal_residency_numeric <- ifelse(individual_data$legal_res_yn == "a. Yes", 1, 0)
 
 #convert to dummies the temp_illness, chronic_illness, serious_med_cond and mental_illness variables:
-individual_data$temp_illness_dummy <- ifelse(individual_data$temp_illness == "Yes", 1, 0)
-individual_data$chronic_illness_dummy <- ifelse(individual_data$chronic_illness == "Yes", 1, 0)
-individual_data$serious_med_cond_dummy <- ifelse(individual_data$serious_med_cond == "Yes", 1, 0)
-individual_data$mental_illness_dummy <- ifelse(individual_data$mental_illness == "Yes", 1, 0)
+#use grepl to find the variables that contain the word ill:
+names(individual_data)[grepl("health", names(individual_data))]
+
+#serious_med_cond: "dis_dif_walking_s", "dis_dif_hearing_s", "dis_dif_seeing_s", "dis_dif_hands_s", "dis_dif_rais_jug_s" 
+
+# Create dummy variables for dis_dif_hearing_s
+individual_data$dis_dif_hearing_dummy <- ifelse(individual_data$dis_dif_hearing_s %in% c("3. A lot of difficulty", "2. Some difficulty", "4. Cannot do at all"), 1, 0)
+# Create dummy variables for dis_dif_seeing_s
+individual_data$dis_dif_seeing_dummy <- ifelse(individual_data$dis_dif_seeing_s %in% c("3. A lot of difficulty", "2. Some difficulty", "4. Cannot do at all"), 1, 0)
+# Create dummy variables for dis_dif_hands_s
+individual_data$dis_dif_hands_dummy <- ifelse(individual_data$dis_dif_hands_s %in% c("3. A lot of difficulty", "2. Some difficulty", "4. Cannot do at all"), 1, 0)
+# Create dummy variables for dis_dif_rais_jug_s
+individual_data$dis_dif_rais_jug_dummy <- ifelse(individual_data$dis_dif_rais_jug_s %in% c("3. A lot of difficulty", "2. Some difficulty", "4. Cannot do at all"), 1, 0)
+# Create a dummy variable for dis_dif_walking_s:
+individual_data$dis_dif_walking_dummy <- ifelse(individual_data$dis_dif_walking_s %in% c("3. A lot of difficulty", "2. Some difficulty", "4. Cannot do at all"), 1, 0)
+
+#create a dummy called serious_med_cond:
+individual_data$serious_med_cond_dummy <- ifelse(rowSums(individual_data[, c("dis_dif_hearing_dummy", "dis_dif_seeing_dummy", "dis_dif_hands_dummy", "dis_dif_rais_jug_dummy", "dis_dif_walking_dummy")]) > 0, 1, 0)
+
+#temp_illness: table(individual_data$child_sick_yn) a. Yes  b. No 
+#create temp_illness_dummy variable, that's 1 if child_sick_yn is "a. Yes" and 0 otherwise:
+individual_data$temp_illness_dummy <- ifelse(individual_data$child_sick_yn == "a. Yes", 1, 0)
+
+#create dummy chronic_illness_dummy variable, that's 1 if chronic_illness_yn is "a. Yes" and 0 otherwise:
+individual_data$chronic_illness_dummy <- ifelse(individual_data$chronic_illness_yn == "a. Yes", 1, 0)
+
+#mental illness: "dis_child_learn_s", "dis_dif_remembering_s":
+#create a dummy variable for dis_child_learn_s:
+individual_data$dis_child_learn_dummy <- ifelse(individual_data$dis_child_learn_s %in% c("3. A lot of difficulty", "2. Some difficulty", "4. Cannot do at all"), 1, 0)
+#create a dummy variable for dis_dif_remembering_s:
+individual_data$dis_dif_remembering_dummy <- ifelse(individual_data$dis_dif_remembering_s %in% c("3. A lot of difficulty", "2. Some difficulty", "4. Cannot do at all"), 1, 0)
+
+#create a dummy variable for mental illness:
+individual_data$mental_illness_dummy <- ifelse(rowSums(individual_data[, c("dis_child_learn_dummy", "dis_dif_remembering_dummy")]) > 0, 1, 0)
+
+#individual_data$temp_illness_dummy <- ifelse(individual_data$temp_illness == "Yes", 1, 0)
+#individual_data$chronic_illness_dummy <- ifelse(individual_data$chronic_illness == "Yes", 1, 0)
+#individual_data$serious_med_cond_dummy <- ifelse(individual_data$serious_med_cond == "Yes", 1, 0)
+#individual_data$mental_illness_dummy <- ifelse(individual_data$mental_illness == "Yes", 1, 0)
 
 #remove the variables that are not needed:
-individual_data <- individual_data %>% select(-temp_illness, -chronic_illness, -serious_med_cond, -mental_illness)
+#individual_data <- individual_data %>% select(-temp_illness, -chronic_illness, -serious_med_cond, -mental_illness)
 
-#sex variable:
+#sex variable: gender_s
+
 #what are the unique values of the variable
-unique(individual_data$sex)
+unique(individual_data$gender_s)
 #turn into a dummy variable, where 1 is if the individual is female:
-individual_data$sex_dummy <- ifelse(individual_data$sex == "Female", 1, 0)
+individual_data$sex_dummy <- ifelse(individual_data$gender_s == "b. Female", 1, 0)
 
 #create a dummy variable hh_fem if (is_head_of_household ==1, & sex_dummy ==1):
 individual_data$hh_fem <- ifelse(individual_data$is_head_of_household == 1 & individual_data$sex_dummy == 1, 1, 0)
@@ -184,9 +241,6 @@ individual_data$over_60 <- ifelse(individual_data$age_numeric > 60, 1, 0)
 
 #create a variable for the age of the head of household:
 individual_data$age_hoh <- ifelse(individual_data$is_head_of_household == 1, individual_data$age_numeric, NA)
-
-#how many nas are in the age_hoh variable?
-sum(!is.na(individual_data$age_hoh))
 
 #put it at the beginning of the dataframe as second
 individual_data1 <- individual_data %>% select(formid, age_hoh)
@@ -198,9 +252,14 @@ individual_data$age_of_female_head <- ifelse(individual_data$sex_dummy == 1 & in
 individual_data$age_of_male_head <- ifelse(individual_data$sex_dummy == 0 & individual_data$is_head_of_household == 1, individual_data$age_numeric, 0)
 
 #WORK REGULARLY: 
+#use grepl to see which variables have the name work:
+names(individual_data)[grepl("work", names(individual_data))]
 
-#create work_regular_dummy variable:
-individual_data$work_regular_dummy <- ifelse(individual_data$work_regular == "Yes", 1, 0)
+#create work_regular_dummy variable: work_as_s: 
+individual_data$work_regular_dummy <- ifelse(individual_data$work_as_s %in% c("a. Work for someone else for pay (as employee, labourer, apprentice)",
+                                                                              "b. Work in own/family farming or fishing",
+                                                                              "c. Work in any other kind of business activity"), 1, 0)
+table(individual_data$work_regular_dummy) #3196 people work regularly. 
 
 #is female and works regularly:
 individual_data$female_and_work_regular <- ifelse(individual_data$sex_dummy == 1 & individual_data$work_regular_dummy == 1, 1, 0)
@@ -210,29 +269,19 @@ individual_data$male_and_work_regular <- ifelse(individual_data$sex_dummy == 0 &
 #is child and works regularly:
 individual_data$child_and_work_regular <- ifelse(individual_data$age_numeric < 18 & individual_data$work_regular_dummy == 1, 1, 0)
 
-#work_regular variable distribution:
-table(individual_data$work_regular)
-
-#nas in work_regular_dummy:
-sum(is.na(individual_data$work_regular_dummy))
-
 #create a work_regular_and_female variable
 individual_data$work_regular_and_female <- ifelse(individual_data$work_regular_dummy == 1 & individual_data$sex_dummy == 1, 1, 0)
 
-#create edu_hoh variable, that takes the value of the highest grade category for the head of household:
-individual_data$edu_hoh <- ifelse(individual_data$is_head_of_household == 1, individual_data$highest_grade_category_numeric, NA)
-table(individual_data$edu_hoh)
-
 #create a dataframe with the variables formid, age_numeric, children_under_5, is_head_of_household, has_spouse, legal_residency
 #sex_dummy, temp_illness_dummy, chronic_illness_dummy, serious_med_cond_dummy, mental_illness_dummy, hh_fem, over_60, age_hoh, female_and_work_regular, male_and_work_regular, child_and_work_regular:
-individual_data1 <- individual_data %>% select (edu_hoh, formid, children_5to_14, work_regular_and_female, child_and_work_regular, male_and_work_regular, female_and_work_regular,
-                                               work_regular_dummy, age_of_male_head, age_of_female_head, 
-                                               age_hoh,over_60,hh_fem, sex_dummy,legal_residency_numeric, has_spouse, is_head_of_household,
-                                               children_under_5, highest_grade_category_numeric, age_numeric,
-                                               children, temp_illness_dummy, chronic_illness_dummy, serious_med_cond_dummy, mental_illness_dummy)
+individual_data1 <- individual_data %>% select (formid, children_5to_14, work_regular_and_female, child_and_work_regular, male_and_work_regular, female_and_work_regular,
+                                                work_regular_dummy, age_of_male_head, age_of_female_head, 
+                                                age_hoh,over_60,hh_fem, sex_dummy,legal_residency_numeric, has_spouse, is_head_of_household,
+                                                children_under_5, highest_grade_category_numeric, age_numeric,
+                                                children, temp_illness_dummy, chronic_illness_dummy, serious_med_cond_dummy, mental_illness_dummy)
 
 #group the data in individual_data1 dataframe by formid:
-table(individual_data1$edu_hoh)
+table(individual_data1$age_hoh)
 
 # Calculate max(age_hoh) separately
 max_age_hoh <- individual_data1 %>%
@@ -271,287 +320,356 @@ table(individual_data1$children_5to_14)
 #SELECT THE VARIABLES FROM THE HOUSEHOLD DATA:
 
 #Create household size variable, from the total_hh variable:
-household_data$household_size <- household_data$total_hh
+household_data$household_size <- household_data$total_num_hh_i
 table(household_data$household_size)
 
 #I'll create a RCSI index, which is the reduced coping strategies. It's based on the following variables:
-#relying on less preferred or less expensive food:
-#less_expensive
-#reducing the portion size of meals and the number of meals eaten per day
-#reduced_meals
-#reduced_portion
-#borrowing food or relying on help from friends or relatives
-#borrowed_food
-#restricting food consumption by adults in order for children to eat and by female heads of households
-#restrict_consumption
-#spending days without eating
-#days_nofood
-#sending household members to eat somewhere else
-#eat_elsewhere
+#clean the variables:
+#use grepl to see which variables have the name food:
+names(household_data)[grepl("else", names(household_data))]
 
 #Create a rCSI variable, that's the weighted average of the above variables, where each has a weight of less_expensive: 1, (reduced_meals+reduced_portion)/2: 1, borrowed_food: 2, restrict_consumption: 1, days_nofood: 3, eat_elsewhere: 1
-household_data$rCSI <- (household_data$less_expensive +
-                        (household_data$reduced_meals + household_data$reduced_portion)/2+
-                        2*household_data$borrowed_food +
-                        household_data$restrict_consumption +
-                        3*household_data$days_nofood +
-                        household_data$eat_elsewhere)/6
+household_data$rCSI <- (household_data$less_expensive_i +
+                          (household_data$reduced_meals_i + household_data$reduced_portion_i)/2+
+                          2*household_data$borrowed_food_i +
+                          household_data$restrict_consumption_i +
+                          3*household_data$days_nofood_i +
+                          household_data$eat_elsewhere_i)/6
 
 table(household_data$rCSI)
 summary(household_data$rCSI)
 
 #govenorate: perform the cleaning operations on governorate: 
+
+#Remove the lowercase letters followed by a period in the district_s variable:
+household_data$district_s <- gsub("^[a-z]\\.", "", household_data$district_s)
+
+#print the unique districts:
+print(unique(household_data$district_s))
+
+#Remove the leading and trailing whitespace in the district_s variable:
+household_data$district_s <- trimws(household_data$district_s)
+
+#print the unique districts:
+print(unique(household_data$district_s))
+
+unique(household_data$district_s)
+
+location_mapping <- list(
+  "Akkar" = c("Akkar"),
+  "North" = c("Zgharta", "Bcharre", "El Minieh Dennie", "Tripoli", "El Koura", "Kesrwane", "Jbeil", "Bent Jbeil"),
+  "Mount Lebanon" = c("El Meten", "Baabda", "Aley", "Chouf", "El Batroun"),
+  "Beirut" = c("Beirut"),
+  "Baalbek-El Hermel" = c("Baalbek", "El Hermel"),
+  "Bekaa" = c("Rachaya", "Zahle", "West Bekaa"),
+  "South" = c("Saida", "Sour", "Jezzine"),
+  "El Nabatieh" = c("El Nabatieh", "Hasbaya", "Marjaayoun")
+)
+# Create a new variable 'governorate' based on the mapping:
+household_data$governorate <- NA
+for (i in seq_along(location_mapping)) {
+  household_data$governorate[household_data$district_s %in% location_mapping[[i]]] <- names(location_mapping)[i]
+}
+
+#print the unique governorates:
+unique_governorates <- unique(household_data$governorate)
+print(unique_governorates)
+
 table(household_data$governorate)
+
+#see how many nas:
+sum(is.na(household_data$governorate))
 
 #create 8 dummies one for each governorate:
 household_data$Akkar_dummy <- ifelse(household_data$governorate == "Akkar", 1, 0)
-household_data$BaalbekHermel_dummy <- ifelse(household_data$governorate == "Baalbek-Hermel", 1, 0)
+household_data$BaalbekHermel_dummy <- ifelse(household_data$governorate == "Baalbek-El Hermel", 1, 0)
 household_data$Beirut_dummy <- ifelse(household_data$governorate == "Beirut", 1, 0)
-household_data$Beqaa_dummy <- ifelse(household_data$governorate == "Beqaa", 1, 0)
+household_data$Beqaa_dummy <- ifelse(household_data$governorate == "Bekaa", 1, 0)
 household_data$MountLebanon_dummy <- ifelse(household_data$governorate == "Mount Lebanon", 1, 0)
-household_data$North_dummy <- ifelse(household_data$governorate == "North Lebanon", 1, 0)
-household_data$South_dummy <- ifelse(household_data$governorate == "South Lebanon", 1, 0)
-household_data$Nabatieh_dummy <- ifelse(household_data$governorate == "El_Nabatieh", 1, 0)
+household_data$North_dummy <- ifelse(household_data$governorate == "North", 1, 0)
+household_data$South_dummy <- ifelse(household_data$governorate == "South", 1, 0)
+household_data$Nabatieh_dummy <- ifelse(household_data$governorate == "El Nabatieh", 1, 0)
 
+#from the list above, I excluded Keserwan as a governorate. Might have to compare with other years later. 
 #coping mechanisms:
-
 #cleaning the variables: 
-household_data <- household_data
+#use grepl to see which variables have the name food:
+
 #create a food_oncredit dummy: 
 household_data$food_oncredit_dummy <- NA
-household_data$food_oncredit_dummy[household_data$food_oncredit %in% c("Yes")] <- 1
-household_data$food_oncredit_dummy[household_data$food_oncredit %in% c("No because HH had already done it and cannot continue doing it", "Non applicable HH do/did not have", "No, not need to do it")] <- 0
+household_data$food_oncredit_dummy[household_data$bought_food_credit_yn %in% c("a. Yes")] <- 1
+household_data$food_oncredit_dummy[household_data$bought_food_credit_yn %in% c("c. No because HH had already done it and cannot continue doing it", "d. Non applicable HH do/did not have", "b. No, not need to do it")] <- 0
 
 table(household_data$food_oncredit_dummy)
 
 #create a spent_saving dummy variable: 
 household_data$spent_saving_dummy <- NA
-household_data$spent_saving_dummy[household_data$spent_saving %in% c("Yes")] <- 1
-household_data$spent_saving_dummy[household_data$spent_saving %in% c("No because HH had already done it and cannot continue doing it", "Non applicable HH do/did not have", "No, not need to do it")] <- 0
+household_data$spent_saving_dummy[household_data$spent_hh_savings_yn %in% c("a. Yes")] <- 1
+household_data$spent_saving_dummy[household_data$spent_hh_savings_yn %in% c("c. No because HH had already done it and cannot continue doing it", "d. Non applicable HH do/did not have", "b. No, not need to do it")] <- 0
 
 table(household_data$spent_saving_dummy)
 
 #create a selling_goods dummy variable: 
 household_data$selling_goods_dummy <- NA
-household_data$selling_goods_dummy[household_data$selling_goods %in% c("Yes")] <- 1
-household_data$selling_goods_dummy[household_data$selling_goods %in% c("No because HH had already done it and cannot continue doing it", "Non applicable HH do/did not have", "No, not need to do it")] <- 0
+household_data$selling_goods_dummy[household_data$sold_hh_goods_yn %in% c("a. Yes")] <- 1
+household_data$selling_goods_dummy[household_data$sold_hh_goods_yn %in% c("c. No because HH had already done it and cannot continue doing it", "d. Non applicable HH do/did not have", "b. No, not need to do it")] <- 0
 
 table(household_data$selling_goods_dummy)
 
 #create a variable called stress_coping, that is 1 if household has adopted either of the following
 household_data$stress_coping <- ifelse(household_data$food_oncredit_dummy ==1 | household_data$spent_saving_dummy ==1 |
-                                       household_data$selling_goods_dummy ==1, 1, 0)
+                                         household_data$selling_goods_dummy ==1, 1, 0)
 
 table(household_data$stress_coping)
 
 #crisis_coping
-table(household_data$no_school)
-table(household_data$reduce_edu)
-table(household_data$reduce_essential)
-table(household_data$child_mariage)
+names(household_data)[grepl("mari", names(household_data))]
+table(household_data$withd_chld_school_yn)
+
+table(household_data$withd_chld_school_yn)
+table(household_data$red_non_food_exp_edu_yn)
+table(household_data$red_non_food_exp_health_yn)
+table(household_data$child_mariage_yn)
 
 #create a dummy for each of the variables in the list:
 
 # List of variables you want to apply the operation to
-variables_to_process <- c("reduce_edu", "reduce_essential", "child_mariage", "no_school")
+variables_to_process <- c("withd_chld_school_yn", "red_non_food_exp_edu_yn", "red_non_food_exp_health_yn", "child_mariage_yn")
 
 # Apply the operation to each variable and create new variables with "_dummy"
 for (variable in variables_to_process) {
-  household_data[[paste0(variable, "_dummy")]] <- ifelse(household_data[[variable]] %in% c("Yes"), 1,
-                                                         ifelse(household_data[[variable]] %in% c("No because HH had already done it and cannot continue doing it", 
-                                                                                                  "Non applicable HH do/did not have", 
-                                                                                                  "No, not need to do it"), 0, NA))
+  household_data[[paste0(variable, "_dummy")]] <- ifelse(household_data[[variable]] %in% c("a. Yes"), 1,
+                                                         ifelse(household_data[[variable]] %in% c("c. No because HH had already done it and cannot continue doing it", 
+                                                                                                  "d. Non applicable HH do/did not have", 
+                                                                                                  "b. No, not need to do it"), 0, NA))
 }
 
-table(household_data$child_mariage_dummy)
+table(household_data$child_mariage_yn_dummy)
 
 #create crisis_coping
-household_data$crisis_coping <- ifelse(household_data$reduce_edu_dummy == 1 | 
-                                         household_data$reduce_essential_dummy == 1 |
-                                         household_data$child_mariage_dummy == 1 |
-                                         household_data$no_school_dummy == 1, 1, 0)
+household_data$crisis_coping <- ifelse(household_data$withd_chld_school_yn_dummy == 1 | 
+                                         household_data$red_non_food_exp_edu_yn_dummy == 1 |
+                                         household_data$red_non_food_exp_health_yn_dummy == 1 |
+                                         household_data$child_mariage_yn == 1, 1, 0)
 
 
 table(household_data$crisis_coping)
 
 #emergency_coping 
-table(household_data$sold_house)
-table(household_data$selling_assets)
-table(household_data$child_exploitative_work)
-table(household_data$begging)
-table(household_data$child_labour)
+names(household_data)[grepl("labour", names(household_data))]
+table(household_data$withd_chld_school_yn)
+
+#mutate sold_house_yn to sold_house:
+household_data$sold_house <- household_data$sold_house_yn
+#mutate sold_assets_yn to selling_assets:
+household_data$selling_assets <- household_data$sold_assets_yn
+#mutate child_exploit_work_yn to child_exploitative_work:
+household_data$child_exploitative_work <- household_data$child_exploit_work_yn
+#mutate begging_yn to begging:
+household_data$begging <- household_data$begging_yn
+#mutate child_labour_yn to child_labour:
+household_data$child_labour <- household_data$child_labour_yn
 
 # List of variables you want to create dummy variables for
 variables_to_process <- c("sold_house", "selling_assets", "child_exploitative_work", "begging", "child_labour")
 
 # Apply the operation to each variable and create new variables with "_dummy"
 for (variable in variables_to_process) {
-  household_data[[paste0(variable, "_dummy")]] <- ifelse(household_data[[variable]] == "Yes", 1,
-                                                         ifelse(household_data[[variable]] %in% c("No because HH had already done it and cannot continue doing it", 
-                                                                                                  "Non applicable HH do/did not have", 
-                                                                                                  "No, not need to do it"), 0, NA))
+  household_data[[paste0(variable, "_dummy")]] <- ifelse(household_data[[variable]] == "a. Yes", 1,
+                                                         ifelse(household_data[[variable]] %in% c("c. No because HH had already done it and cannot continue doing it", 
+                                                                                                  "d. Non applicable HH do/did not have", 
+                                                                                                  "b. No, not need to do it"), 0, NA))
 }
 
 # Create dummy variable indicating emergency coping
 household_data <- household_data %>%
   mutate(emergency_coping = ifelse(sold_house_dummy == 1 | selling_assets_dummy == 1 |
-                                    begging_dummy == 1 |
+                                     begging_dummy == 1 |
                                      child_labour_dummy == 1 | child_exploitative_work_dummy == 1, 1, 0))
 
 table(household_data$emergency_coping)
-
-#borrow_sourcefriends_leb #3059 households. 
-#borrow_sourcefriends_not_leb #91 households. 
-#borrow_sourcelocal_charity #9 households. 
-#reason_borrowingfood #2975 households. 
+names(household_data)[grepl("reason", names(household_data))]
+#borrow_money_src_m_frnd_leb // borrow_sourcefriends_leb #3018 households. 
+#borrow_money_src_m_frnd_no_leb // borrow_sourcefriends_not_leb #91 households. 
+#borrow_money_src_m_loc_charity // borrow_sourcelocal_charity #9 households. 
+#prim_reason_credit_m_food // reason_borrowingfood #2975 households. 
 
 #create dummies: 
-household_data$borrow_sourcefriends_leb_dummy <- household_data$borrow_sourcefriends_leb
-household_data$borrow_sourcefriends_not_leb_dummy <- household_data$borrow_sourcefriends_not_leb
-household_data$borrow_sourcelocal_charity_dummy <- household_data$borrow_sourcelocal_charity
-household_data$reason_borrowingfood_dummy <- household_data$reason_borrowingfood
+household_data$borrow_sourcefriends_leb_dummy <- household_data$borrow_money_src_m_frnd_leb
+household_data$borrow_sourcefriends_not_leb_dummy <- household_data$borrow_money_src_m_frnd_no_leb
+household_data$borrow_sourcelocal_charity_dummy <- household_data$borrow_money_src_m_loc_charity
+household_data$reason_borrowingfood_dummy <- household_data$prim_reason_credit_m_food
 
-#assets: 
-#Create a variable called total assets that sums the following (all the assets are in the format TRUE FALSE)
-#create dummies with all of the assets: 
-variables_to_process <- c("air_conditioning", "beds", "blankets", "car_van_truck", "computer", 
-                          "dish_washer", "dryer", "dvd_player", "heater", "internet", 
-                          "kitchen_utensils", "mattresses", "microwave", "mobile_phone", 
-                          "motorcycle", "oven", "pots_pans", "satellite_dish", 
-                          "separate_freezer", "small_gas_stove_for_cooking", 
-                          "table_and_chairs", "tv", "vaccum_cleaner", "washing_machine", 
-                          "water_heater", "water_containers", "winter_clothing_sets")
+#assets:
+dic <- read.csv("/Users/sofialozano/Desktop/EconHonors/Data/Raw/Honors_Thesis_Data/UNHCR_LBN_2020_VASYR_data/UNHCR_LBN_2020_VASYR_data_household_labels.csv")
 
-#NEW ASSET VARIABLES WITH CONSISTENT NAMING AND MEASURING ACROSS YEARS: 
-names(household_data)[grepl("person", names(household_data))]
+variables_to_process <- c("cleaning_items_yn", "female_hygiene_yn", "baby_care_yn",
+                          "pers_hygiene_yn", "have_internet_phone_yn", "have_internet_wifi_yn",
+                          "electricity_access_yn", "sms_yn", "wash_drinking_yn" )
 
-#products variables: 
-table(household_data$personal_hygiene)
-table(household_data$female_hygiene)
-table(household_data$clenaning_items)
-table(household_data$baby_care)
-
-#mobile phone, internet, electricity access, wifi, make a table
-table(household_data$mobile_phone)
-table(household_data$internet)
-table(household_data$energy_source_hnone)
-
-#"damaged_shelter" "damaged_roof, leaking_roof, "damage_walls", "damage_plumbing", rottenness, unsealed_windows:
-table(household_data$leaking_roof)
-table(household_data$damaged_shelter)
-table(household_data$damaged_roof)
-table(household_data$damage_walls)
-table(household_data$damage_plumbing)
-table(household_data$rottenness)
-table(household_data$unsealed_windows)
-
-#Convert variables above into dummies, they're in FALSE TRUE format:
-variables_to_process <- c("mobile_phone", "internet", "energy_source_hnone", "leaking_roof", "damaged_shelter", "damaged_roof", "damage_walls", "damage_plumbing", "rottenness", "unsealed_windows")
-
-# Apply the operation to each variable and create new dummy variables
+# Apply the operation to each variable and create new variables with "_dummy"
 for (variable in variables_to_process) {
-  household_data[[paste0(variable, "_dummy")]] <- as.integer(household_data[[variable]])
+  household_data[[paste0(variable, "_dummy")]] <- ifelse(household_data[[variable]] == "a. Yes", 1,
+                                                         ifelse(household_data[[variable]] %in% c("b. No"), 0, NA))
 }
 
-#convert personal_hygene into a dummy:
-household_data$personal_hygiene_dummy <- ifelse(household_data$personal_hygiene == "yes", 1, 0)
-household_data$female_hygiene_dummy <- ifelse(household_data$female_hygiene == "Yes", 1, 0)
-household_data$cleaning_items_dummy <- ifelse(household_data$clenaning_items == "yes", 1, 0)
-household_data$baby_care_dummy <- ifelse(household_data$baby_care == "Yes", 1, 0)
+#summary(household_data$expenditure_transport)
+#create transport_dummy if household spent more than 9856 on transport:
+#household_data$transport_dummy <- ifelse(household_data$expenditure_transport > 9856, 1, 0)
+#create clothing_dummy if household spent more than 4078 on clothing:
+#household_data$clothing_dummy <- ifelse(household_data$expenditure_clothing > 4078, 1, 0)
 
-#create energy source dummy as 1 minus energy_source_hnone:
-household_data$energy_dummy <- ifelse(household_data$energy_source_hnone_dummy == "1", 0, 1)
 
-# Create basic_household_assets variable, that sums "leaking_roof", "damaged_shelter", "damaged_roof", "damage_walls", "damage_plumbing", "rottenness", "unsealed_windows":
-household_data$basic_household_assets <- rowSums(household_data[, c("leaking_roof_dummy", "damaged_shelter_dummy", "damaged_roof_dummy", "damage_walls_dummy", "damage_plumbing_dummy", "rottenness_dummy", "unsealed_windows_dummy")])
+#Create a variable called total assets that sums the following (all the assets are in the format TRUE FALSE)
+#create dummies with all of the assets: 
+variables_to_process <- c("cleaning_items_yn_dummy", "female_hygiene_yn_dummy", "baby_care_yn_dummy",
+                          "pers_hygiene_yn_dummy", "have_internet_phone_yn_dummy", "have_internet_wifi_yn_dummy",
+                          "electricity_access_yn_dummy", "transport_dummy", "clothing_dummy")
 
-# Create appliance_assets variable, that sums "personal_hygiene_dummy", "baby_care_dummy", "cleaning_items_dummy", "female_hygiene_dummy":
-household_data$appliance_assets <- rowSums(household_data[, c("personal_hygiene_dummy", "baby_care_dummy", "cleaning_items_dummy", "female_hygiene_dummy")])
 
-#communication_assets:
-household_data$communication_assets <- rowSums(household_data[, c("energy_dummy", "internet_dummy")])
-
-#mobile phone dummy:
-table(household_data$mobile_phone_dummy)
-
-#refrigerator, sewing_machine, doesn't exist. Excluded from asset list. 
+#For this year: refrigerator, sewing_machine, etc. doesn't exist. Excluded from asset list. There are limited data on assets.
 
 # Apply the operation to each variable and create new dummy variables
-# for (variable in variables_to_process) {
-# household_data[[paste0(variable, "_dummy")]] <- as.integer(household_data[[variable]])
-# }
-# 
-# #create a new dataframe with the dummies:
-# household_data1 <- household_data %>% select(formid, air_conditioning_dummy, beds_dummy, blankets_dummy, car_van_truck_dummy, computer_dummy, 
-#                                             dish_washer_dummy, dryer_dummy, dvd_player_dummy, heater_dummy, internet_dummy, 
-#                                             kitchen_utensils_dummy, mattresses_dummy, microwave_dummy, mobile_phone_dummy, 
-#                                             motorcycle_dummy, oven_dummy, pots_pans_dummy, satellite_dish_dummy, 
-#                                             separate_freezer_dummy, small_gas_stove_for_cooking_dummy, 
-#                                              table_and_chairs_dummy, tv_dummy, vaccum_cleaner_dummy, washing_machine_dummy, 
-#                                              water_heater_dummy, water_containers_dummy, winter_clothing_sets_dummy)
-# 
+#for (variable in variables_to_process) {
+ #household_data[[paste0(variable, "_dummy")]] <- as.integer(household_data[[variable]])
+#}
 
-#create total assets variable, that sums all the recent dummy variables:
-#household_data1$total_assets <- rowSums(household_data1[, 2:27], na.rm = TRUE)
+#mutate household_id into formid:
+household_data$formid <- household_data$household_id
 
-#create a basic_household_assets variable:
-# List of asset categories and corresponding dummy variables
-#asset_categories <- list(
-#  basic_household_assets = c("air_conditioning_dummy", "beds_dummy", "blankets_dummy", "mattresses_dummy", "winter_clothing_sets_dummy"),
-#  appliance_assets = c("dish_washer_dummy", "dryer_dummy", "heater_dummy", "kitchen_utensils_dummy", "microwave_dummy", "oven_dummy", "pots_pans_dummy", "separate_freezer_dummy", "small_gas_stove_for_cooking_dummy", "table_and_chairs_dummy", "vaccum_cleaner_dummy", "washing_machine_dummy", "water_heater_dummy", "water_containers_dummy")
+#NEW ASSET VARIABLES WITH CONSISTENT NAMING AND MEASURING ACROSS YEARS: 
+names(household_data)[grepl("win", names(household_data))]
 
-# Create basic_household_assets variable
-#household_data$basic_household_assets <- rowSums(household_data[asset_categories$basic_household_assets])
+#products variables: 
+table(household_data$pers_hygiene_yn_dummy)
+table(household_data$female_hygiene_yn)
+table(household_data$cleaning_items_yn_dummy)
+table(household_data$baby_care_yn)
 
-# Create appliance_assets variable
-#household_data$appliance_assets <- rowSums(household_data[asset_categories$appliance_assets])
+#mobile phone, internet, electricity access, wifi, make a table
+table(household_data$have_internet_phone_yn_dummy)
+table(household_data$have_internet_wifi_yn_dummy)
+table(household_data$electricity_access_yn)
+
+#"damaged_shelter" "damaged_roof, leaking_roof, "damage_walls", "damage_plumbing", rottenness, unsealed_windows:
+table(household_data$leaking_roof_yn)
+table(household_data$damaged_shelter_yn)
+table(household_data$damaged_roof_yn)
+table(household_data$damage_walls_yn)
+table(household_data$water_pipes_not_func_yn)
+table(household_data$rottenness_leak_yn)
+table(household_data$unsealed_win_doors_yn)
+
+#turn female_hygiene_yn into a dummy:
+household_data$female_hygiene_yn_dummy <- ifelse(household_data$female_hygiene_yn == "a.       Yes ", 1, 0)
+#turn baby_care_yn into a dummy:
+household_data$baby_care_yn_dummy <- ifelse(household_data$baby_care_yn == "a.       Yes ", 1, 0)
+#turn electricity_access_yn into a dummy:
+household_data$electricity_access_yn_dummy <- ifelse(household_data$electricity_access_yn == "a. Yes", 1, 0)
+
+#turn leaking_roof_yn into a dummy:
+household_data$leaking_roof_yn_dummy <- ifelse(household_data$leaking_roof_yn == "a. Yes", 1, 0)
+#turn damaged_shelter_yn into a dummy:
+household_data$damaged_shelter_yn_dummy <- ifelse(household_data$damaged_shelter_yn == "a. Yes", 1, 0)
+#turn damaged_roof_yn into a dummy:
+household_data$damaged_roof_yn_dummy <- ifelse(household_data$damaged_roof_yn == "a. Yes", 1, 0)
+#turn damage_walls_yn into a dummy:
+household_data$damage_walls_yn_dummy <- ifelse(household_data$damage_walls_yn == "a. Yes", 1, 0)
+#turn water_pipes_not_func_yn into a dummy:
+household_data$water_pipes_not_func_yn_dummy <- ifelse(household_data$water_pipes_not_func_yn == "a. Yes", 1, 0)
+#turn rottenness_leak_yn into a dummy:
+household_data$rottenness_leak_yn_dummy <- ifelse(household_data$rottenness_leak_yn == "a. Yes", 1, 0)
+#turn unsealed_win_doors_yn into a dummy:
+household_data$unsealed_win_doors_yn_dummy <- ifelse(household_data$unsealed_win_doors_yn == "a. Yes", 1, 0)
+
+# Create basic_household_assets variable, that sums "leaking_roof", "damaged_shelter", "damaged_roof", "damage_walls", "damage_plumbing", "rottenness", "unsealed_windows":
+household_data$basic_household_assets <- rowSums(household_data[, c("leaking_roof_yn_dummy", "damaged_shelter_yn_dummy", "damaged_roof_yn_dummy", "damage_walls_yn_dummy", "water_pipes_not_func_yn_dummy", "rottenness_leak_yn_dummy", "unsealed_win_doors_yn_dummy")])
+
+# Create appliance_assets variable, that sums "personal_hygiene_dummy", "baby_care_dummy", "cleaning_items_dummy", "female_hygiene_dummy":
+household_data$appliance_assets <- rowSums(household_data[, c("pers_hygiene_yn_dummy", "baby_care_yn_dummy", "cleaning_items_yn_dummy", "female_hygiene_yn_dummy")])
 
 #communication_assets:
-#household_data$communication_assets <- rowSums(household_data[, c("tv_dummy", "satellite_dish_dummy", "mobile_phone_dummy", "internet_dummy", "dvd_player_dummy", "computer_dummy")])
+household_data$communication_assets <- rowSums(household_data[, c("electricity_access_yn_dummy", "have_internet_wifi_yn_dummy")])
 
-#table(household_data$communication_assets)
-#table(household_data$mobile_phone_dummy)
+#mobile phone dummy:
+table(household_data$have_internet_phone_yn_dummy)
+#mutate have_internet_phone_yn_dummy to mobile_phone_dummy
+household_data$mobile_phone_dummy <- household_data$have_internet_phone_yn_dummy
 
-#transportation_assets: 
-#create transportation_assets variable:
-#household_data$transportation_assets <- rowSums(household_data[, c("motorcycle_dummy", "car_van_truck_dummy")])
+#create a new dataframe with the dummies:
+# household_data1 <- household_data %>% select(formid, cleaning_items_yn_dummy, female_hygiene_yn_dummy, baby_care_yn_dummy,
+#                                              pers_hygiene_yn_dummy, have_internet_phone_yn_dummy, have_internet_wifi_yn_dummy,
+#                                              electricity_access_yn_dummy, transport_dummy, clothing_dummy)
+# 
+# #create total assets variable, that sums all the recent dummy variables:
+# household_data1$total_assets <- rowSums(household_data1[, 2:10], na.rm = TRUE)
+# 
+# #create a basic_household_assets variable:
+# # List of asset categories and corresponding dummy variables
+# asset_categories <- list(
+#   basic_household_assets = c("cleaning_items_yn_dummy", "female_hygiene_yn_dummy", "baby_care_yn_dummy", "pers_hygiene_yn_dummy", "clothing_dummy"),
+#   appliance_assets = c("electricity_access_yn_dummy", "have_internet_phone_yn_dummy", "have_internet_wifi_yn_dummy")
+# )
+# 
+# # Create basic_household_assets variable
+# household_data$basic_household_assets <- rowSums(household_data[asset_categories$basic_household_assets], na.rm = TRUE)
+# 
+# # Create appliance_assets variable
+# household_data$appliance_assets <- rowSums(household_data[asset_categories$appliance_assets], na.rm = TRUE)
+# 
+# table(household_data$basic_household_assets)
+# table(household_data$appliance_assets)
+# 
+# #communication_assets:
+# # Create communication_assets variable
+# household_data$communication_assets <- rowSums(household_data[, c("have_internet_phone_yn_dummy", "have_internet_wifi_yn_dummy")])
+# 
+# table(household_data$communication_assets)
+# 
+# #mutate have_internet_phone_yn_dummy to mobile_phone_dummy
+# household_data$mobile_phone_dummy <- household_data$have_internet_phone_yn_dummy
+# table(household_data$mobile_phone_dummy)
+# 
+# #transportation_assets: 
+# #create transportation_assets variable:
+# household_data$transportation_assets <- rowSums(household_data[, c("transport_dummy")])
+# table(household_data$transportation_assets)
 
 #water expenditure: 
 #expenditure_water
-table(household_data$drink_water_source)
-
-#create a dummy called spent_on_water, if the drink_water_source is "Bottled mineral water""
-household_data$spent_on_water <- ifelse(household_data$drink_water_source == "Bottled mineral water", 1, 0)
+table(household_data$wash_drinking_yn_dummy)
+#mutate to expenditure_water_dummy
+household_data$expenditure_water_dummy <- household_data$wash_drinking_yn_dummy
 
 #household expenditure:
 #summary of the variable:
-summary(household_data$expenditure_total)
+table(household_data$expenditure_household)
+table(household_data$exp_total_dec)
+
+#see nas in the variable:
+sum(is.na(household_data$expenditure_household))
 
 #create dummy variable high_expenditure_d, if the expenditure_total is greater than the mean expenditure for the district to which the household belongs:
 #mean_expenditure <- household_data %>% 
 #  group_by(governorate) %>% 
-#  summarise(mean_expenditure = mean(expenditure_total, na.rm = TRUE))
+#  summarise(mean_expenditure = mean(exp_total_dec, na.rm = TRUE))
 
 # Merge mean expenditure back into the original dataframe
 #household_data <- merge(household_data, mean_expenditure, by = "governorate", suffixes = c("", "_gov"))
 
 # Create dummy variable high_expenditure
 #household_data <- household_data %>%
-#  mutate(high_expenditure_d = expenditure_total > mean_expenditure)
+#  mutate(high_expenditure_d = exp_total_dec > mean_expenditure)
 
 #summary of the high_expenditure_d variable:
 #table(household_data$high_expenditure_d)
 #turn into a dummy:
 #household_data$high_expenditure_dummy <- ifelse(household_data$high_expenditure_d == "TRUE", 1, 0)
 
-#create a dummy called high_expenditure, if the expenditure_total is greater than 625000 (higher than the mean):
-#household_data$high_expenditure <- ifelse(household_data$expenditure_total > 625000, 1, 0)
-#table(household_data$high_expenditure)
-
 #Create a high expenditure per capita, by governorate variable: 
 # Calculate expenditure per capita for each household
 household_data <- household_data %>%
-  mutate(expenditure_per_capita = expenditure_total / household_size)
+  mutate(expenditure_per_capita = exp_total_dec / household_size)
 
 # Calculate mean expenditure per capita by governorate
 mean_expenditure_per_capita <- household_data %>% 
@@ -567,61 +685,79 @@ household_data <- household_data %>%
 
 #turn into a dummy:
 household_data$high_expenditure_per_capita_dummy <- ifelse(household_data$high_expenditure_per_capita == "TRUE", 1, 0)
+
 table(household_data$high_expenditure_per_capita_dummy)
 
 #food consumption variables:
 #create the food consumption score: 
-household_data$FCScore <- (household_data$tubers_cons * 3) + (household_data$cereal_cons * 2) +
-  (household_data$green_leafy_cons * 1) + (household_data$orange_fruits_grp * 1) +
-  (household_data$meat_fish_grp * 4) + (household_data$milk_cons * 4) +
-  (household_data$sugar_cons * 0.5) + (household_data$oil_cons * 0.5) +
-  (household_data$spices_cons * 0)
+#use grepl to see which variables have the name cons:
+names(household_data)[grepl("spice", names(household_data))]
 
-table(household_data$FCScore)
+household_data$FCScore <- (
+  ifelse(is.na(household_data$num_days_tubers_cons_i), 0, household_data$num_days_tubers_cons_i) * 3 +
+    ifelse(is.na(household_data$num_days_cereal_cons_i), 0, household_data$num_days_cereal_cons_i) * 2 +
+    ifelse(is.na(household_data$num_days_green_leafy_i), 0, household_data$num_days_green_leafy_i) * 1 +
+    ifelse(is.na(household_data$num_days_orange_fruits_i), 0, household_data$num_days_orange_fruits_i) * 1 +
+    ifelse(is.na(household_data$num_days_meat_fish_i), 0, household_data$num_days_meat_fish_i) * 4 +
+    ifelse(is.na(household_data$num_days_milk_i), 0, household_data$num_days_milk_i) * 4 +
+    ifelse(is.na(household_data$num_days_sugar_i), 0, household_data$num_days_sugar_i) * 0.5 +
+    ifelse(is.na(household_data$num_days_oil_i), 0, household_data$num_days_oil_i) * 0.5 +
+    ifelse(is.na(household_data$value_food_spices_dec), 0, household_data$value_food_spices_dec) * 0
+)
+
+table(household_data$FCScore) #the FCScore is between 0 and 101. There's an issue with the spices, but it isn't bad. 
+summary(household_data$FCScore) #i'm getting a lot of nas. 
 
 #curfew variables:
-table(household_data$curfew)
-household_data$curfew_dummy <- ifelse(household_data$curfew == "yes", 1, 0)
+#table(household_data$curfews_yn)
+#unique(household_data$curfews_yn)
+household_data$curfew_dummy <- ifelse(household_data$curfews_yn == "a. Yes", 1, 0)
 
 #technology acceess:
-table(household_data$info_servicessms) #most get their info from sms. 
-household_data$info_servicessms_dummy <- ifelse(household_data$info_servicessms == "TRUE", 1, 0)
+#use grepl to find sms
+names(household_data)[grepl("sms", names(household_data))]
+#mutate sms_yn_dummy to info_servicessms_dummy
+household_data$info_servicessms_dummy <- household_data$sms_yn_dummy
+table(household_data$info_servicessms_dummy) #most get their info from sms. 3801.
 
 #toilet sharing:
-table(household_data$shared_toilets)
+table(household_data$share_toilets_hh_yn)
 #sharing_bathroom #number of people sharing bathroom
 #shared_toilets #yes/no
-household_data$shared_toilets_dummy <- ifelse(household_data$shared_toilets == "yes", 1, 0)
-
+household_data$shared_toilets_dummy <- ifelse(household_data$share_toilets_hh_yn == "a. Yes", 1, 0)
 
 #arrival at same time:
-#table(household_data$insecurity) #yes/no
+names(household_data)[grepl("safety", names(household_data))]
+table(household_data$free_movement_yn) #yes/no
 #insecurity
-household_data$insecurity_dummy <- ifelse(household_data$insecurity == "yes", 1, 0)
+household_data$insecurity_dummy <- ifelse(household_data$free_movement_yn == "a. Yes", 1, 0)
 
 #plan to stay next 3 months
+names(household_data)[grepl("6", names(household_data))]
 table(household_data$accom_living_period)
 summary(household_data$accom_living_period)
-household_data$accom_short_living_period_dummy <- ifelse(household_data$accom_living_period == "6 to 12 months" | 
-                                                           household_data$accom_living_period == "Less than 6 months", 1, 0)
+#this variable will show wether the person has an unstable living situation, or recently had. Most people have been living in the same place for more than 6 months.
+household_data$accom_short_living_period_dummy <- ifelse(household_data$changed_accom_yn == "a. Yes" | 
+                                                           household_data$move_accom_yesno == "b. No", 1, 0)
 
 #beneficiary of assistance:
 
 #beneficiary of primary healthcare/received benefits:
-table(household_data$health_required1) #yes/no. Convert to dummies to be able to use in regression: 
+table(household_data$prim_health_care_yn) #yes/no. Convert to dummies to be able to use in regression: 
 
-household_data$health_access1_dummy <- ifelse(household_data$health_access1 == "yes", 1, 0)
-household_data$health_required1_dummy <- ifelse(household_data$health_required1 == "yes", 1, 0)
+#health required: prim_health_care_yn
+#health access: prim_health_case_ass_yn
 
-#create a ecard_dummy, if either the first or second or third income source is "E-cards WFP FOOD":
-#table(household_data$first_income_sources), 903
-#table(household_data$second_income_sources), 246
-#table(household_data$third_income_sources), 41
+household_data$health_access1_dummy <- ifelse(household_data$prim_health_case_ass_yn == "a. Yes", 1, 0)
+household_data$health_required1_dummy <- ifelse(household_data$prim_health_care_yn == "a. Yes", 1, 0)
+
+#create a ecard_dummy
+table(household_data$main_income_src_s)
 
 household_data$ecard_dummy <- ifelse(
-  replace(household_data$first_income_sources == "E-cards WFP FOOD", is.na(household_data$first_income_sources), FALSE) |
-    replace(household_data$second_income_sources == "E-cards WFP FOOD", is.na(household_data$second_income_sources), FALSE) |
-    replace(household_data$third_income_sources == "E-cards WFP FOOD", is.na(household_data$third_income_sources), FALSE),
+  household_data$main_income_src_s == "i. E-cards used in WFP FOOD SHOPS" |
+    household_data$sec_income_src_s == "i. E-cards used in WFP FOOD SHOPS" |
+    household_data$third_income_src_s == "i. E-cards used in WFP FOOD SHOPS",
   1, 0)
 
 table(household_data$ecard_dummy)
@@ -629,33 +765,49 @@ table(household_data$ecard_dummy)
 #how many missing values in the ecard_dummy variable?
 sum(is.na(household_data$ecard_dummy))
 
-household_data$stress_coping <- ifelse(household_data$food_oncredit_dummy ==1 | household_data$spent_saving_dummy ==1 |
-                                         household_data$selling_goods_dummy ==1, 1, 0)
+#child labor variable:
+table(household_data$child_labour_dummy)
+
+#include: 
+names(household_data)[grepl("food", names(household_data))]
+#mutate main_income_src_s to first_income_sources:
+household_data <- household_data %>% mutate(first_income_sources = main_income_src_s)
+#mutate total_income_dec to total_income: 
+household_data <- household_data %>% mutate(total_income = total_income_dec)
+#create calcexpenditure_food_usd with NA: 
+household_data$calcexpenditure_food_usd <- NA
+#expenditure_food
 
 #include the variables in the household_data1 dataframe:
-                                             
+
 household_data1 <- household_data %>% select (formid, household_size, governorate, Akkar_dummy, BaalbekHermel_dummy, Beirut_dummy, Beqaa_dummy, MountLebanon_dummy, 
                                               North_dummy, South_dummy, Nabatieh_dummy, stress_coping, crisis_coping, emergency_coping, borrow_sourcefriends_not_leb_dummy,
                                               borrow_sourcefriends_leb_dummy, borrow_sourcelocal_charity_dummy, reason_borrowingfood_dummy, basic_household_assets,
-                                              appliance_assets, communication_assets, mobile_phone_dummy, spent_on_water, FCScore, rCSI,
+                                              appliance_assets, communication_assets, mobile_phone_dummy, expenditure_water_dummy, FCScore, rCSI,
                                               curfew_dummy, info_servicessms_dummy, shared_toilets_dummy, insecurity_dummy, accom_short_living_period_dummy, health_required1_dummy, 
                                               health_access1_dummy, ecard_dummy, child_labour_dummy, high_expenditure_per_capita_dummy, calcexpenditure_food_usd,
                                               expenditure_food, total_income, first_income_sources
-                                             )
+)
 
 #excluded total_assets, as it's not in this DF. 
-# transportation_assets, excluded.
+#transportation assets, excluded
+
+#mutate expenditure_water_dummy to spent_on_water
+household_data1$spent_on_water <- household_data1$expenditure_water_dummy
+
 #-------------------------------------------------------------------------------
 
 #Merging household_data1 and individual_data1 dataframes:
 merged_df <- merge(household_data1, individual_data1, by = "formid", all = TRUE)
 
+#see variables with many nas:
+colSums(is.na(merged_df))
+
 setwd("/Users/sofialozano/Desktop/EconHonors")
 
 #save merged dataframe as a csv file:
-write.csv(merged_df, "merged_df_2018.csv")
+write.csv(merged_df, "merged_df_2020.csv")
 
-#save the csv file in the working directory:
 table(merged_df$North_dummy)
 
 #running my regressions:
@@ -672,8 +824,8 @@ model1 <- lm(FCScore ~ info_servicessms_dummy * mobile_phone_dummy + ecard_dummy
 summary(model1)
 
 governorate_dummies <- merged_df[, c("Akkar_dummy", "Beirut_dummy", "MountLebanon_dummy", 
-                                  "North_dummy", "South_dummy", "Beqaa_dummy", 
-                                  "BaalbekHermel_dummy", "Nabatieh_dummy")]
+                                     "North_dummy", "South_dummy", "Beqaa_dummy", 
+                                     "BaalbekHermel_dummy", "Nabatieh_dummy")]
 
 governorate_dummies_subset <- governorate_dummies[, -which(names(governorate_dummies) == "Beirut_dummy")]
 
@@ -757,7 +909,7 @@ formula <- "rCSI ~
             serious_med_cond_dummy + mental_illness_dummy + 
             BaalbekHermel_dummy + Beirut_dummy + Beqaa_dummy + 
             MountLebanon_dummy + North_dummy + South_dummy + Nabatieh_dummy"
-            
+
 # Run the OLS regression model
 model5 <- lm(formula, data = merged_df)
 
@@ -777,43 +929,6 @@ formula00 <- "rCSI ~
             children_under_5 + highest_grade_category_numeric + age_numeric + 
             temp_illness_dummy + chronic_illness_dummy + 
             serious_med_cond_dummy + mental_illness_dummy"
-
-#improved regression, with organized variables: 
-formula_new <- "rCSI ~ 
-            work_regular_and_female+ 
-            child_and_work_regular + 
-            male_and_work_regular + 
-            age_hoh +
-            over_60 + 
-            hh_fem + 
-            children_under_5 +
-            highest_grade_category_numeric + 
-            age_numeric + 
-            sex_dummy + 
-            basic_household_assets +
-            appliance_assets + 
-            communication_assets + 
-            mobile_phone_dummy + 
-            transportation_assets + 
-            info_servicessms_dummy + 
-            shared_toilets_dummy +
-            stress_coping + 
-            crisis_coping + 
-            emergency_coping +
-            spent_on_water + 
-            high_expenditure + 
-            curfew_dummy + 
-            insecurity_dummy + 
-            accom_short_living_period_dummy + 
-            health_access1_dummy + 
-            ecard_dummy + 
-            child_labour_dummy +
-            legal_residency_numeric + 
-            has_spouse +
-            temp_illness_dummy +
-            chronic_illness_dummy + 
-            serious_med_cond_dummy +
-            mental_illness_dummy"
 
 #now do the same, but exclude stress_coping, crisis_coping and emergency_coping:
 formula10 <- "rCSI ~ 
@@ -882,7 +997,7 @@ formula11 <- "FCScore ~
             temp_illness_dummy + chronic_illness_dummy + 
             serious_med_cond_dummy + mental_illness_dummy"
 
-formula21 <- "rCSI ~ 
+formula21 <- "FCScore ~ 
             stress_coping + crisis_coping + emergency_coping + 
             basic_household_assets + appliance_assets + communication_assets + 
             mobile_phone_dummy + transportation_assets + spent_on_water + 
@@ -965,7 +1080,7 @@ summary_table <- list(
 
 # Print the summary table
 summary_table
-  
+
 #-----------
 #install packages for graphing:
 install.packages("ggplot2")
@@ -1007,8 +1122,8 @@ head_of_household <- merged_data %>% select(formid, is_head_of_household, gender
 #FILTER BY HEAD OF HOUSEHOLD
 
 #of the heads of household, create a dummy that is equal to 1 if the individual is female and 0 otherwise:
-                                                                            
-                                                                            
+
+
 #how many 1s and 0s are in the is_head_of_household variable?
 table(merged_data$is_head_of_household) #This means 4323 individuals are head of household. The variable has been correctly created. 
 
